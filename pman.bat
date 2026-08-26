@@ -72,6 +72,8 @@ set "LOG_FILE=!LOG_DIR!\manager.log"
 set "HISTORY_FILE=!LOG_DIR!\command-history.log"
 set "RECENT_FILE=!LOG_DIR!\recent-projects.log"
 set "MAX_LOG_BYTES=1048576"
+set "GIT_MAIN=main"
+set "GIT_ORIGIN=origin"
 
 if not exist "!LOG_DIR!" mkdir "!LOG_DIR!" >nul 2>&1
 
@@ -1424,79 +1426,1042 @@ goto main
 
 :gitmanager
 cls
-
 echo %CYAN%================================================
 echo                    GIT MANAGER
 echo ================================================%RESET%
-
 echo.
-echo   1. Status
-echo   2. Current Branch
-echo   3. Branch List
-echo   4. Recent Commits
-echo   5. Fetch
-echo   6. Pull
-echo   7. Push
-echo   8. Back
+echo   Repository: %GREEN%!PROJECT_NAME!%RESET%
+echo   Main Branch: %GREEN%!GIT_MAIN!%RESET%
+echo   Origin Remote: %GREEN%!GIT_ORIGIN!%RESET%
 echo.
-
-where git >nul 2>&1
-if errorlevel 1 (
-    echo   %RED%[ERROR] Git is not installed.%RESET%
-    pause
-    goto main
-)
-
+echo   ----------------------------------------------
+echo    1.  Repository / Init
+echo    2.  Status
+echo    3.  Stage Changes
+echo    4.  Unstage Changes
+echo    5.  Commit
+echo    6.  Amend Last Commit
+echo   ----------------------------------------------
+echo    7.  Branch Manager
+echo    8.  Remote Manager
+echo    9.  Fetch
+echo   10.  Pull
+echo   11.  Push
+echo   12.  Sync Main ^<--^> Origin
+echo   ----------------------------------------------
+echo   13.  History / Log
+echo   14.  Diff
+echo   15.  Stash Manager
+echo   16.  Tag Manager
+echo   17.  Rebase
+echo   18.  Merge
+echo   19.  Cherry-pick
+echo   20.  Revert Commit
+echo   ----------------------------------------------
+echo   21.  Reset / Restore
+echo   22.  Clean Untracked Files
+echo   23.  Submodule Manager
+echo   24.  Git Config
+echo   25.  Git Ignore
+echo   26.  Show Refs
+echo   27.  Git Information
+echo   28.  Set Main / Origin
+echo   ----------------------------------------------
+echo   29.  Back
+echo.
 set "gc="
 set /p "gc=  Select option: "
-
-if "!gc!"=="1" goto gitstatus
-if "!gc!"=="2" (
-    git branch --show-current
-    pause
-    goto gitmanager
-)
-
-if "!gc!"=="3" (
-    git branch
-    pause
-    goto gitmanager
-)
-
-if "!gc!"=="4" (
-    git log --oneline -10
-    pause
-    goto gitmanager
-)
-
-if "!gc!"=="5" (
-    git fetch
-    pause
-    goto gitmanager
-)
-
-if "!gc!"=="6" (
-    echo.
-    set "confirm="
-    set /p "confirm=  Pull changes from remote? (Y/N): "
-    if /i "!confirm!"=="Y" git pull
-    pause
-    goto gitmanager
-)
-
-if "!gc!"=="7" (
-    echo.
-    set "confirm="
-    set /p "confirm=  Push changes to remote? (Y/N): "
-    if /i "!confirm!"=="Y" git push
-    pause
-    goto gitmanager
-)
-
-if "!gc!"=="8" goto main
-
+if "!gc!"=="1" goto gitrepo
+if "!gc!"=="2" goto gitstatus
+if "!gc!"=="3" goto gitstage
+if "!gc!"=="4" goto gitunstage
+if "!gc!"=="5" goto gitcommit
+if "!gc!"=="6" goto gitamend
+if "!gc!"=="7" goto gitbranches
+if "!gc!"=="8" goto gitremotes
+if "!gc!"=="9" goto gitfetch
+if "!gc!"=="10" goto gitpull
+if "!gc!"=="11" goto gitpush
+if "!gc!"=="12" goto gitsync
+if "!gc!"=="13" goto gitlogmenu
+if "!gc!"=="14" goto gitdiff
+if "!gc!"=="15" goto gitstash
+if "!gc!"=="16" goto gittags
+if "!gc!"=="17" goto gitrebase
+if "!gc!"=="18" goto gitmerge
+if "!gc!"=="19" goto gitcherry
+if "!gc!"=="20" goto gitrevert
+if "!gc!"=="21" goto gitreset
+if "!gc!"=="22" goto gitclean
+if "!gc!"=="23" goto gitsubmodule
+if "!gc!"=="24" goto gitconfig
+if "!gc!"=="25" goto gitignore
+if "!gc!"=="26" goto gitrefs
+if "!gc!"=="27" goto gitinfo
+if "!gc!"=="28" goto gitdefaults
+if "!gc!"=="29" goto main
 goto gitmanager
 
+
+:: ======================================================
+:: GIT DEFAULTS
+:: ======================================================
+
+:gitdefaults
+cls
+echo %CYAN%================================================
+echo                MAIN / ORIGIN SETTINGS
+echo ================================================%RESET%
+echo.
+echo   Main branch  : !GIT_MAIN!
+echo   Origin remote: !GIT_ORIGIN!
+echo.
+echo   1. Set Main Branch
+echo   2. Set Origin Remote
+echo   3. Reset to main / origin
+echo   4. Back
+echo.
+set "gd="
+set /p "gd=  Select option: "
+if "!gd!"=="1" (
+    set "v="
+    set /p "v=  Main branch [main]: "
+    if defined v (
+        call :is_safe_token "!v!"
+        if errorlevel 1 (echo Invalid branch name.&pause&goto gitdefaults)
+        set "GIT_MAIN=!v!"
+    )
+    goto gitdefaults
+)
+if "!gd!"=="2" (
+    set "v="
+    set /p "v=  Origin remote [origin]: "
+    if defined v (
+        call :is_safe_token "!v!"
+        if errorlevel 1 (echo Invalid remote name.&pause&goto gitdefaults)
+        set "GIT_ORIGIN=!v!"
+    )
+    goto gitdefaults
+)
+if "!gd!"=="3" (
+    set "GIT_MAIN=main"
+    set "GIT_ORIGIN=origin"
+    goto gitdefaults
+)
+if "!gd!"=="4" goto gitmanager
+goto gitdefaults
+
+
+:: ======================================================
+:: GIT REPOSITORY
+:: ======================================================
+
+:gitrepo
+cls
+echo %CYAN%================================================
+echo                REPOSITORY / INIT
+echo ================================================%RESET%
+echo.
+echo   Main: !GIT_MAIN!    Origin: !GIT_ORIGIN!
+echo.
+echo   1. Initialize repository
+echo   2. Show repository root
+echo   3. Show .git directory
+echo   4. Add remote origin
+echo   5. Remove remote origin
+echo   6. Rename current branch to main
+echo   7. Back
+echo.
+set "x="
+set /p "x=  Select option: "
+if "!x!"=="1" call :run_command "git init"
+if "!x!"=="2" call :run_command "git rev-parse --show-toplevel"
+if "!x!"=="3" call :run_command "git rev-parse --git-dir"
+if "!x!"=="4" (
+    set "url="
+    set /p "url=  Remote URL: "
+    if defined url call :run_command "git remote add !GIT_ORIGIN! !url!"
+)
+if "!x!"=="5" call :run_command "git remote remove !GIT_ORIGIN!"
+if "!x!"=="6" call :run_command "git branch -M !GIT_MAIN!"
+if "!x!"=="7" goto gitmanager
+pause
+goto gitrepo
+
+
+:: ======================================================
+:: GIT STATUS
+:: ======================================================
+
+:gitstatus
+cls
+echo %CYAN%================================================
+echo                     GIT STATUS
+echo ================================================%RESET%
+echo.
+echo   Main: !GIT_MAIN!    Origin: !GIT_ORIGIN!
+echo.
+call :run_command "git status"
+echo.
+echo   Current branch:
+git branch --show-current
+echo.
+echo   Tracking:
+git status -sb
+pause
+goto gitmanager
+
+
+:: ======================================================
+:: STAGE / UNSTAGE
+:: ======================================================
+
+:gitstage
+cls
+echo %CYAN%================================================
+echo                   STAGE CHANGES
+echo ================================================%RESET%
+echo.
+echo   Main: !GIT_MAIN!    Origin: !GIT_ORIGIN!
+echo.
+echo   1. Stage all
+echo   2. Stage a file/folder
+echo   3. Interactive staging
+echo   4. Back
+echo.
+set "x="
+set /p "x=  Select option: "
+if "!x!"=="1" call :run_command "git add -A"
+if "!x!"=="2" (
+    set "p="
+    set /p "p=  File/folder: "
+    if defined p call :run_command "git add -- !p!"
+)
+if "!x!"=="3" call :run_command "git add -p"
+if "!x!"=="4" goto gitmanager
+pause
+goto gitstage
+
+:gitunstage
+cls
+echo %CYAN%================================================
+echo                  UNSTAGE CHANGES
+echo ================================================%RESET%
+echo.
+echo   1. Unstage all
+echo   2. Unstage a file/folder
+echo   3. Back
+echo.
+set "x="
+set /p "x=  Select option: "
+if "!x!"=="1" call :run_command "git restore --staged ."
+if "!x!"=="2" (
+    set "p="
+    set /p "p=  File/folder: "
+    if defined p call :run_command "git restore --staged -- !p!"
+)
+if "!x!"=="3" goto gitmanager
+pause
+goto gitunstage
+
+
+:: ======================================================
+:: GIT COMMIT
+:: ======================================================
+
+:gitcommit
+cls
+echo %CYAN%================================================
+echo                       COMMIT
+echo ================================================%RESET%
+echo.
+echo   Main: !GIT_MAIN!    Origin: !GIT_ORIGIN!
+echo.
+git status --short
+echo.
+set "msg="
+set /p "msg=  Commit message: "
+if not defined msg goto gitmanager
+call :run_command "git commit -m "!msg!""
+pause
+goto gitmanager
+
+:gitamend
+cls
+echo %CYAN%================================================
+echo                  AMEND LAST COMMIT
+echo ================================================%RESET%
+echo.
+git log -1 --oneline
+echo.
+echo   1. Amend using existing message
+echo   2. Amend with new message
+echo   3. Back
+echo.
+set "x="
+set /p "x=  Select option: "
+if "!x!"=="1" call :run_command "git commit --amend --no-edit"
+if "!x!"=="2" (
+    set "msg="
+    set /p "msg=  New commit message: "
+    if defined msg call :run_command "git commit --amend -m "!msg!""
+)
+if "!x!"=="3" goto gitmanager
+pause
+goto gitamend
+
+
+:: ======================================================
+:: BRANCH MANAGER
+:: ======================================================
+
+:gitbranches
+cls
+echo %CYAN%================================================
+echo                    BRANCH MANAGER
+echo ================================================%RESET%
+echo.
+echo   Main: !GIT_MAIN!    Origin: !GIT_ORIGIN!
+echo.
+echo   1. List local branches
+echo   2. List all branches
+echo   3. Create branch
+echo   4. Switch branch
+echo   5. Create + switch branch
+echo   6. Rename current branch
+echo   7. Delete local branch
+echo   8. Force delete local branch
+echo   9. Merge branch into current
+echo  10. Rebase current onto main
+echo  11. Show remote branches
+echo  12. Delete remote branch from origin
+echo  13. Back
+echo.
+set "x="
+set /p "x=  Select option: "
+if "!x!"=="1" call :run_command "git branch"
+if "!x!"=="2" call :run_command "git branch -a"
+if "!x!"=="3" (
+    set "b="
+    set /p "b=  New branch: "
+    if defined b call :run_command "git branch !b!"
+)
+if "!x!"=="4" (
+    set "b="
+    set /p "b=  Switch to branch: "
+    if defined b call :run_command "git switch !b!"
+)
+if "!x!"=="5" (
+    set "b="
+    set /p "b=  New branch: "
+    if defined b call :run_command "git switch -c !b!"
+)
+if "!x!"=="6" (
+    set "b="
+    set /p "b=  New name: "
+    if defined b call :run_command "git branch -m !b!"
+)
+if "!x!"=="7" (
+    set "b="
+    set /p "b=  Branch to delete: "
+    if defined b call :run_command "git branch -d !b!"
+)
+if "!x!"=="8" (
+    set "b="
+    set /p "b=  Branch to force delete: "
+    if defined b call :run_command "git branch -D !b!"
+)
+if "!x!"=="9" (
+    set "b="
+    set /p "b=  Branch to merge: "
+    if defined b call :run_command "git merge !b!"
+)
+if "!x!"=="10" call :run_command "git rebase !GIT_MAIN!"
+if "!x!"=="11" call :run_command "git branch -r"
+if "!x!"=="12" (
+    set "b="
+    set /p "b=  Remote branch to delete: "
+    if defined b call :run_command "git push !GIT_ORIGIN! --delete !b!"
+)
+if "!x!"=="13" goto gitmanager
+pause
+goto gitbranches
+
+
+:: ======================================================
+:: REMOTE MANAGER
+:: ======================================================
+
+:gitremotes
+cls
+echo %CYAN%================================================
+echo                    REMOTE MANAGER
+echo ================================================%RESET%
+echo.
+echo   Main: !GIT_MAIN!    Origin: !GIT_ORIGIN!
+echo.
+echo   1. List remotes
+echo   2. Show origin
+echo   3. Add origin
+echo   4. Change origin URL
+echo   5. Show origin URL
+echo   6. Remove origin
+echo   7. Fetch origin
+echo   8. Prune deleted origin branches
+echo   9. Back
+echo.
+set "x="
+set /p "x=  Select option: "
+if "!x!"=="1" call :run_command "git remote -v"
+if "!x!"=="2" call :run_command "git remote show !GIT_ORIGIN!"
+if "!x!"=="3" (
+    set "url="
+    set /p "url=  Origin URL: "
+    if defined url call :run_command "git remote add !GIT_ORIGIN! !url!"
+)
+if "!x!"=="4" (
+    set "url="
+    set /p "url=  New origin URL: "
+    if defined url call :run_command "git remote set-url !GIT_ORIGIN! !url!"
+)
+if "!x!"=="5" call :run_command "git remote get-url !GIT_ORIGIN!"
+if "!x!"=="6" call :run_command "git remote remove !GIT_ORIGIN!"
+if "!x!"=="7" call :run_command "git fetch !GIT_ORIGIN!"
+if "!x!"=="8" call :run_command "git fetch !GIT_ORIGIN! --prune"
+if "!x!"=="9" goto gitmanager
+pause
+goto gitremotes
+
+
+:: ======================================================
+:: FETCH / PULL / PUSH / SYNC
+:: ======================================================
+
+:gitfetch
+cls
+echo %CYAN%================================================
+echo                       FETCH
+echo ================================================%RESET%
+echo   Main: !GIT_MAIN!    Origin: !GIT_ORIGIN!
+echo.
+echo   1. Fetch origin
+echo   2. Fetch origin + prune
+echo   3. Fetch all remotes
+echo   4. Fetch + tags
+echo   5. Back
+echo.
+set "x="
+set /p "x=  Select option: "
+if "!x!"=="1" call :run_command "git fetch !GIT_ORIGIN!"
+if "!x!"=="2" call :run_command "git fetch !GIT_ORIGIN! --prune"
+if "!x!"=="3" call :run_command "git fetch --all"
+if "!x!"=="4" call :run_command "git fetch !GIT_ORIGIN! --tags"
+if "!x!"=="5" goto gitmanager
+pause
+goto gitfetch
+
+:gitpull
+cls
+echo %CYAN%================================================
+echo                        PULL
+echo ================================================%RESET%
+echo   Main: !GIT_MAIN!    Origin: !GIT_ORIGIN!
+echo.
+echo   1. Pull origin/main
+echo   2. Pull with rebase
+echo   3. Pull all tags
+echo   4. Pull current tracking branch
+echo   5. Back
+echo.
+set "x="
+set /p "x=  Select option: "
+if "!x!"=="1" call :run_command "git pull !GIT_ORIGIN! !GIT_MAIN!"
+if "!x!"=="2" call :run_command "git pull --rebase !GIT_ORIGIN! !GIT_MAIN!"
+if "!x!"=="3" call :run_command "git pull !GIT_ORIGIN! --tags"
+if "!x!"=="4" call :run_command "git pull"
+if "!x!"=="5" goto gitmanager
+pause
+goto gitpull
+
+:gitpush
+cls
+echo %CYAN%================================================
+echo                        PUSH
+echo ================================================%RESET%
+echo   Main: !GIT_MAIN!    Origin: !GIT_ORIGIN!
+echo.
+echo   1. Push main to origin
+echo   2. Push current branch
+echo   3. Push current + set upstream
+echo   4. Push all branches
+echo   5. Push tags
+echo   6. Force-with-lease main to origin
+echo   7. Back
+echo.
+set "x="
+set /p "x=  Select option: "
+if "!x!"=="1" call :run_command "git push !GIT_ORIGIN! !GIT_MAIN!"
+if "!x!"=="2" call :run_command "git push"
+if "!x!"=="3" call :run_command "git push -u !GIT_ORIGIN! HEAD"
+if "!x!"=="4" call :run_command "git push !GIT_ORIGIN! --all"
+if "!x!"=="5" call :run_command "git push !GIT_ORIGIN! --tags"
+if "!x!"=="6" call :run_command "git push !GIT_ORIGIN! !GIT_MAIN! --force-with-lease"
+if "!x!"=="7" goto gitmanager
+pause
+goto gitpush
+
+:gitsync
+cls
+echo %CYAN%================================================
+echo                MAIN ^<--^> ORIGIN SYNC
+echo ================================================%RESET%
+echo.
+echo   Local main : !GIT_MAIN!
+echo   Remote     : !GIT_ORIGIN!
+echo   Remote main: !GIT_ORIGIN!/!GIT_MAIN!
+echo.
+echo   1. Fetch origin
+echo   2. Pull origin/main into local main
+echo   3. Push local main to origin/main
+echo   4. Fetch + pull + push
+echo   5. Compare local main with origin/main
+echo   6. Back
+echo.
+set "x="
+set /p "x=  Select option: "
+if "!x!"=="1" call :run_command "git fetch !GIT_ORIGIN!"
+if "!x!"=="2" call :run_command "git pull !GIT_ORIGIN! !GIT_MAIN!"
+if "!x!"=="3" call :run_command "git push !GIT_ORIGIN! !GIT_MAIN!"
+if "!x!"=="4" (
+    call :run_command "git fetch !GIT_ORIGIN!"
+    call :run_command "git pull !GIT_ORIGIN! !GIT_MAIN!"
+    call :run_command "git push !GIT_ORIGIN! !GIT_MAIN!"
+)
+if "!x!"=="5" call :run_command "git diff !GIT_MAIN!..!GIT_ORIGIN!/!GIT_MAIN!"
+if "!x!"=="6" goto gitmanager
+pause
+goto gitsync
+
+
+:: ======================================================
+:: LOG / DIFF
+:: ======================================================
+
+:gitlogmenu
+cls
+echo %CYAN%================================================
+echo                    HISTORY / LOG
+echo ================================================%RESET%
+echo.
+echo   Main: !GIT_MAIN!    Origin: !GIT_ORIGIN!
+echo.
+echo   1. Recent commits
+echo   2. Full graph
+echo   3. File history
+echo   4. Show commit
+echo   5. Search commit messages
+echo   6. Compare main and origin/main
+echo   7. Back
+echo.
+set "x="
+set /p "x=  Select option: "
+if "!x!"=="1" call :run_command "git log --oneline -20"
+if "!x!"=="2" call :run_command "git log --oneline --graph --decorate --all -30"
+if "!x!"=="3" (
+    set "p="
+    set /p "p=  File: "
+    if defined p call :run_command "git log --oneline --follow -- !p!"
+)
+if "!x!"=="4" (
+    set "c="
+    set /p "c=  Commit/hash: "
+    if defined c call :run_command "git show !c!"
+)
+if "!x!"=="5" (
+    set "q="
+    set /p "q=  Search text: "
+    if defined q call :run_command "git log --oneline --all --grep="!q!""
+)
+if "!x!"=="6" call :run_command "git log --oneline !GIT_MAIN!..!GIT_ORIGIN!/!GIT_MAIN!"
+if "!x!"=="7" goto gitmanager
+pause
+goto gitlogmenu
+
+:gitdiff
+cls
+echo %CYAN%================================================
+echo                       DIFF
+echo ================================================%RESET%
+echo.
+echo   1. Working tree changes
+echo   2. Staged changes
+echo   3. Main vs origin/main
+echo   4. Two commits
+echo   5. File diff
+echo   6. Back
+echo.
+set "x="
+set /p "x=  Select option: "
+if "!x!"=="1" call :run_command "git diff"
+if "!x!"=="2" call :run_command "git diff --cached"
+if "!x!"=="3" call :run_command "git diff !GIT_MAIN!..!GIT_ORIGIN!/!GIT_MAIN!"
+if "!x!"=="4" (
+    set "a="
+    set /p "a=  First commit: "
+    set "b="
+    set /p "b=  Second commit: "
+    if defined a if defined b call :run_command "git diff !a! !b!"
+)
+if "!x!"=="5" (
+    set "p="
+    set /p "p=  File: "
+    if defined p call :run_command "git diff -- !p!"
+)
+if "!x!"=="6" goto gitmanager
+pause
+goto gitdiff
+
+
+:: ======================================================
+:: STASH
+:: ======================================================
+
+:gitstash
+cls
+echo %CYAN%================================================
+echo                    STASH MANAGER
+echo ================================================%RESET%
+echo.
+echo   1. Stash changes
+echo   2. Stash including untracked
+echo   3. List stashes
+echo   4. Show stash
+echo   5. Apply stash
+echo   6. Pop stash
+echo   7. Drop stash
+echo   8. Clear all stashes
+echo   9. Back
+echo.
+set "x="
+set /p "x=  Select option: "
+if "!x!"=="1" call :run_command "git stash push"
+if "!x!"=="2" call :run_command "git stash push -u"
+if "!x!"=="3" call :run_command "git stash list"
+if "!x!"=="4" (
+    set "n="
+    set /p "n=  Stash (e.g. stash@{0}): "
+    if defined n call :run_command "git stash show -p !n!"
+)
+if "!x!"=="5" (
+    set "n="
+    set /p "n=  Stash [stash@{0}]: "
+    if not defined n set "n=stash@{0}"
+    call :run_command "git stash apply !n!"
+)
+if "!x!"=="6" call :run_command "git stash pop"
+if "!x!"=="7" (
+    set "n="
+    set /p "n=  Stash [stash@{0}]: "
+    if not defined n set "n=stash@{0}"
+    call :run_command "git stash drop !n!"
+)
+if "!x!"=="8" call :run_command "git stash clear"
+if "!x!"=="9" goto gitmanager
+pause
+goto gitstash
+
+
+:: ======================================================
+:: TAGS
+:: ======================================================
+
+:gittags
+cls
+echo %CYAN%================================================
+echo                      TAG MANAGER
+echo ================================================%RESET%
+echo.
+echo   1. List tags
+echo   2. Create lightweight tag
+echo   3. Create annotated tag
+echo   4. Show tag
+echo   5. Delete local tag
+echo   6. Push tag to origin
+echo   7. Push all tags to origin
+echo   8. Delete remote tag from origin
+echo   9. Back
+echo.
+set "x="
+set /p "x=  Select option: "
+if "!x!"=="1" call :run_command "git tag -n"
+if "!x!"=="2" (
+    set "t="
+    set /p "t=  Tag name: "
+    if defined t call :run_command "git tag !t!"
+)
+if "!x!"=="3" (
+    set "t="
+    set /p "t=  Tag name: "
+    set "m="
+    set /p "m=  Message: "
+    if defined t call :run_command "git tag -a !t! -m "!m!""
+)
+if "!x!"=="4" (
+    set "t="
+    set /p "t=  Tag: "
+    if defined t call :run_command "git show !t!"
+)
+if "!x!"=="5" (
+    set "t="
+    set /p "t=  Tag to delete: "
+    if defined t call :run_command "git tag -d !t!"
+)
+if "!x!"=="6" (
+    set "t="
+    set /p "t=  Tag: "
+    if defined t call :run_command "git push !GIT_ORIGIN! !t!"
+)
+if "!x!"=="7" call :run_command "git push !GIT_ORIGIN! --tags"
+if "!x!"=="8" (
+    set "t="
+    set /p "t=  Remote tag to delete: "
+    if defined t call :run_command "git push !GIT_ORIGIN! --delete !t!"
+)
+if "!x!"=="9" goto gitmanager
+pause
+goto gittags
+
+
+:: ======================================================
+:: REBASE / MERGE / CHERRY-PICK / REVERT
+:: ======================================================
+
+:gitrebase
+cls
+echo %CYAN%================================================
+echo                       REBASE
+echo ================================================%RESET%
+echo   Main: !GIT_MAIN!    Origin: !GIT_ORIGIN!
+echo.
+echo   1. Rebase current onto main
+echo   2. Rebase current onto origin/main
+echo   3. Interactive rebase last N commits
+echo   4. Continue rebase
+echo   5. Abort rebase
+echo   6. Skip commit
+echo   7. Back
+echo.
+set "x="
+set /p "x=  Select option: "
+if "!x!"=="1" call :run_command "git rebase !GIT_MAIN!"
+if "!x!"=="2" call :run_command "git rebase !GIT_ORIGIN!/!GIT_MAIN!"
+if "!x!"=="3" (
+    set "n="
+    set /p "n=  Number of commits: "
+    if defined n call :run_command "git rebase -i HEAD~!n!"
+)
+if "!x!"=="4" call :run_command "git rebase --continue"
+if "!x!"=="5" call :run_command "git rebase --abort"
+if "!x!"=="6" call :run_command "git rebase --skip"
+if "!x!"=="7" goto gitmanager
+pause
+goto gitrebase
+
+:gitmerge
+cls
+echo %CYAN%================================================
+echo                       MERGE
+echo ================================================%RESET%
+echo   Main: !GIT_MAIN!    Origin: !GIT_ORIGIN!
+echo.
+echo   1. Merge a branch
+echo   2. Merge origin/main
+echo   3. Continue merge
+echo   4. Abort merge
+echo   5. Back
+echo.
+set "x="
+set /p "x=  Select option: "
+if "!x!"=="1" (
+    set "b="
+    set /p "b=  Branch: "
+    if defined b call :run_command "git merge !b!"
+)
+if "!x!"=="2" call :run_command "git merge !GIT_ORIGIN!/!GIT_MAIN!"
+if "!x!"=="3" call :run_command "git merge --continue"
+if "!x!"=="4" call :run_command "git merge --abort"
+if "!x!"=="5" goto gitmanager
+pause
+goto gitmerge
+
+:gitcherry
+cls
+echo %CYAN%================================================
+echo                     CHERRY-PICK
+echo ================================================%RESET%
+echo.
+echo   1. Cherry-pick commit
+echo   2. Continue
+echo   3. Abort
+echo   4. Skip
+echo   5. Back
+echo.
+set "x="
+set /p "x=  Select option: "
+if "!x!"=="1" (
+    set "c="
+    set /p "c=  Commit/hash: "
+    if defined c call :run_command "git cherry-pick !c!"
+)
+if "!x!"=="2" call :run_command "git cherry-pick --continue"
+if "!x!"=="3" call :run_command "git cherry-pick --abort"
+if "!x!"=="4" call :run_command "git cherry-pick --skip"
+if "!x!"=="5" goto gitmanager
+pause
+goto gitcherry
+
+:gitrevert
+cls
+echo %CYAN%================================================
+echo                    REVERT COMMIT
+echo ================================================%RESET%
+echo.
+echo   Revert creates a new commit that undoes another commit.
+echo.
+set "c="
+set /p "c=  Commit/hash to revert: "
+if defined c call :run_command "git revert !c!"
+pause
+goto gitmanager
+
+
+:: ======================================================
+:: RESET / RESTORE / CLEAN
+:: ======================================================
+
+:gitreset
+cls
+echo %CYAN%================================================
+echo                  RESET / RESTORE
+echo ================================================%RESET%
+echo.
+echo   1. Restore a file from working tree
+echo   2. Restore all working-tree files
+echo   3. Soft reset to commit
+echo   4. Mixed reset to commit
+echo   5. Hard reset to commit
+echo   6. Back
+echo.
+set "x="
+set /p "x=  Select option: "
+if "!x!"=="1" (
+    set "p="
+    set /p "p=  File: "
+    if defined p call :run_command "git restore -- !p!"
+)
+if "!x!"=="2" call :run_command "git restore ."
+if "!x!"=="3" (
+    set "c="
+    set /p "c=  Commit: "
+    if defined c call :run_command "git reset --soft !c!"
+)
+if "!x!"=="4" (
+    set "c="
+    set /p "c=  Commit: "
+    if defined c call :run_command "git reset !c!"
+)
+if "!x!"=="5" (
+    echo   WARNING: hard reset discards local changes.
+    set "ok="
+    set /p "ok=  Type YES to continue: "
+    if "!ok!"=="YES" (
+        set "c="
+        set /p "c=  Commit: "
+        if defined c call :run_command "git reset --hard !c!"
+    )
+)
+if "!x!"=="6" goto gitmanager
+pause
+goto gitreset
+
+:gitclean
+cls
+echo %CYAN%================================================
+echo                CLEAN UNTRACKED FILES
+echo ================================================%RESET%
+echo.
+echo   1. Preview clean
+echo   2. Delete untracked files
+echo   3. Delete untracked files + folders
+echo   4. Back
+echo.
+set "x="
+set /p "x=  Select option: "
+if "!x!"=="1" call :run_command "git clean -n"
+if "!x!"=="2" call :run_command "git clean -f"
+if "!x!"=="3" call :run_command "git clean -fd"
+if "!x!"=="4" goto gitmanager
+pause
+goto gitclean
+
+
+:: ======================================================
+:: SUBMODULES
+:: ======================================================
+
+:gitsubmodule
+cls
+echo %CYAN%================================================
+echo                  SUBMODULE MANAGER
+echo ================================================%RESET%
+echo.
+echo   1. List submodules
+echo   2. Initialize submodules
+echo   3. Update submodules
+echo   4. Update recursively
+echo   5. Add submodule
+echo   6. Sync submodule URLs
+echo   7. Back
+echo.
+set "x="
+set /p "x=  Select option: "
+if "!x!"=="1" call :run_command "git submodule status"
+if "!x!"=="2" call :run_command "git submodule init"
+if "!x!"=="3" call :run_command "git submodule update"
+if "!x!"=="4" call :run_command "git submodule update --init --recursive"
+if "!x!"=="5" (
+    set "url="
+    set /p "url=  Repository URL: "
+    set "path="
+    set /p "path=  Local path: "
+    if defined url if defined path call :run_command "git submodule add !url! !path!"
+)
+if "!x!"=="6" call :run_command "git submodule sync --recursive"
+if "!x!"=="7" goto gitmanager
+pause
+goto gitsubmodule
+
+
+:: ======================================================
+:: CONFIG / IGNORE / REFS / INFO
+:: ======================================================
+
+:gitconfig
+cls
+echo %CYAN%================================================
+echo                     GIT CONFIG
+echo ================================================%RESET%
+echo.
+echo   1. Show local config
+echo   2. Show global config
+echo   3. Show user name
+echo   4. Show user email
+echo   5. Set user name
+echo   6. Set user email
+echo   7. Back
+echo.
+set "x="
+set /p "x=  Select option: "
+if "!x!"=="1" call :run_command "git config --local --list"
+if "!x!"=="2" call :run_command "git config --global --list"
+if "!x!"=="3" call :run_command "git config user.name"
+if "!x!"=="4" call :run_command "git config user.email"
+if "!x!"=="5" (
+    set "v="
+    set /p "v=  User name: "
+    if defined v call :run_command "git config user.name "!v!""
+)
+if "!x!"=="6" (
+    set "v="
+    set /p "v=  User email: "
+    if defined v call :run_command "git config user.email "!v!""
+)
+if "!x!"=="7" goto gitmanager
+pause
+goto gitconfig
+
+:gitignore
+cls
+echo %CYAN%================================================
+echo                     GIT IGNORE
+echo ================================================%RESET%
+echo.
+echo   1. Open/create .gitignore
+echo   2. Show .gitignore
+echo   3. Check why a file is ignored
+echo   4. Check ignored files
+echo   5. Back
+echo.
+set "x="
+set /p "x=  Select option: "
+if "!x!"=="1" start "" notepad.exe ".gitignore"
+if "!x!"=="2" (
+    if exist ".gitignore" type ".gitignore"
+    if not exist ".gitignore" echo .gitignore not found.
+)
+if "!x!"=="3" (
+    set "p="
+    set /p "p=  File: "
+    if defined p call :run_command "git check-ignore -v !p!"
+)
+if "!x!"=="4" call :run_command "git status --ignored"
+if "!x!"=="5" goto gitmanager
+pause
+goto gitignore
+
+:gitrefs
+cls
+echo %CYAN%================================================
+echo                       REFS
+echo ================================================%RESET%
+echo.
+echo   1. All refs
+echo   2. Branch refs
+echo   3. Remote refs
+echo   4. Tags
+echo   5. Reflog
+echo   6. Back
+echo.
+set "x="
+set /p "x=  Select option: "
+if "!x!"=="1" call :run_command "git show-ref"
+if "!x!"=="2" call :run_command "git for-each-ref refs/heads"
+if "!x!"=="3" call :run_command "git for-each-ref refs/remotes"
+if "!x!"=="4" call :run_command "git for-each-ref refs/tags"
+if "!x!"=="5" call :run_command "git reflog --all"
+if "!x!"=="6" goto gitmanager
+pause
+goto gitrefs
+
+:gitinfo
+cls
+echo %CYAN%================================================
+echo                   GIT INFORMATION
+echo ================================================%RESET%
+echo.
+echo   Main: !GIT_MAIN!    Origin: !GIT_ORIGIN!
+echo.
+echo   1. Git version
+echo   2. Repository root
+echo   3. Current branch
+echo   4. Current commit
+echo   5. Remote URLs
+echo   6. Ahead / behind origin/main
+echo   7. Git environment
+echo   8. Back
+echo.
+set "x="
+set /p "x=  Select option: "
+if "!x!"=="1" call :run_command "git --version"
+if "!x!"=="2" call :run_command "git rev-parse --show-toplevel"
+if "!x!"=="3" call :run_command "git branch --show-current"
+if "!x!"=="4" call :run_command "git rev-parse HEAD"
+if "!x!"=="5" call :run_command "git remote -v"
+if "!x!"=="6" call :run_command "git rev-list --left-right --count !GIT_MAIN!...!GIT_ORIGIN!/!GIT_MAIN!"
+if "!x!"=="7" call :run_command "git var -l"
+if "!x!"=="8" goto gitmanager
+pause
+goto gitinfo
 
 :: ================================================
 :: DEPENDENCY MANAGER
