@@ -2,10 +2,10 @@
 
 setlocal EnableExtensions EnableDelayedExpansion
 
-:: ================================================
+:: =========================================================================
 :: تنظیم اندازه پنجره (عرض و ارتفاع)
-:: ================================================
-set "WIDTH=50"
+:: =========================================================================
+set "WIDTH=75"
 set "HEIGHT=50"
 
 powershell -command "&{$H=$Host.UI.RawUI; $W=$H.WindowSize; $B=$H.BufferSize; $W.Width=%WIDTH%; $W.Height=%HEIGHT%; $B.Width=%WIDTH%; $B.Height=9999; $H.WindowSize=$W; $H.BufferSize=$B;}"
@@ -14,9 +14,9 @@ powershell -command "&{$H=$Host.UI.RawUI; $W=$H.WindowSize; $B=$H.BufferSize; $W
 title Project Manager
 setlocal EnableExtensions EnableDelayedExpansion
 
-:: ================================================
+:: =========================================================================
 :: PROJECT MANAGER  (hardened release build)
-:: ======================================================
+:: ===============================================================================
 :: Changes vs. prototype:
 ::   - All set/p input that reaches a command line is now
 ::     validated against a strict allow-list before use
@@ -32,7 +32,7 @@ setlocal EnableExtensions EnableDelayedExpansion
 ::     supported instead of printing garbage escape codes.
 ::   - Log files are capped and rotated instead of growing
 ::     forever.
-:: ======================================================
+:: ===============================================================================
 
 :: ------------------------------------------------------
 :: ANSI COLOURS (safe, no shell-out; auto-degrades)
@@ -101,47 +101,47 @@ call :rotate_log "!LOG_FILE!"
 call :rotate_log "!HISTORY_FILE!"
 cls
 
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo              yasin !PROJECT_NAME! MANager
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 
 echo.
 echo   ----------------------------------------------
-echo    1. Install Dependencies
-echo    2. Run Project
-echo    3. Development Server
-echo    4. Build Project
-echo    5. Run Custom Script
-echo    6. Clean Project
+echo    1. Install project dependencies       [!PM! install]
+echo    2. Start the project                  [!PM! start]
+echo    3. Start development server           [!PM! run dev]
+echo    4. Build the project                  [!PM! run build]
+echo    5. Run a package.json script          [!PM! run ^<script^>]
+echo    6. Clean caches and generated files   [cleanup options]
 echo   ----------------------------------------------
-echo    7. Test
-echo    8. Lint
-echo    9. Format
-echo   10. Type Check
+echo    7. Run tests                          [!PM! test]
+echo    8. Check code for problems (Lint)     [!PM! run lint]
+echo    9. Format project code                [!PM! run format]
+echo   10. Check TypeScript types             [npx tsc --noEmit / typecheck]
 echo   ----------------------------------------------
-echo   11. Project Status
-echo   12. Package Scripts
-echo   13. Package Updates
-echo   14. Environment Info
-echo   15. Project Diagnostics
-echo   16. Port Checker
-echo   17. Process Manager
+echo   11. See project health and status      [status / detection]
+echo   12. See available package commands     [package.json scripts]
+echo   13. Find outdated packages             [!PM! outdated]
+echo   14. See installed tools and versions   [node/npm/git/etc.]
+echo   15. Diagnose common project problems   [automatic checks]
+echo   16. Check whether a port is in use     [netstat -ano]
+echo   17. Find or stop running programs      [tasklist / taskkill]
 echo   ----------------------------------------------
-echo   18. Git Status
-echo   19. Git Manager
-echo   20. Dependency Manager
+echo   18. See Git changes                    [git status]
+echo   19. Manage Git (branches, commit, push,...) [git]
+echo   20. Manage project dependencies        [!PM! commands]
 echo   ----------------------------------------------
-echo   21. Auto Repair
-echo   22. Recent Projects
-echo   23. Project Explorer
-echo   24. Open Terminal
-echo   25. Open in VS Code
-echo   26. Project Configuration
-echo   27. Command History
-echo   28. Workspace Information
+echo   21. Automatically repair common issues [install/typecheck]
+echo   22. Open recently used projects        [PMAN history]
+echo   23. Open this project folder           [Explorer]
+echo   24. Open a terminal here               [cmd]
+echo   25. Open this project in VS Code       [code .]
+echo   26. See PMAN/project configuration     [configuration]
+echo   27. See commands you have run          [history log]
+echo   28. See workspace information          [workspace]
 echo   ----------------------------------------------
-echo   29. Deep Clean
-echo   30. Exit
+echo   29. Deep clean the project             [cleanup]
+echo   0. Exit PMAN
 echo   ----------------------------------------------
 echo.
 
@@ -151,13 +151,13 @@ echo   Project Path: %CD%
 echo.
 
 set "choice="
-set /p "choice=  Select option (1-30): "
+set /p "choice=  Select option (0-29): "
 
 for /f "delims=0123456789" %%x in ("!choice!") do set "choice="
 if not defined choice goto badchoice
 
-if !choice! LSS 1 goto badchoice
-if !choice! GTR 30 goto badchoice
+if !choice! LSS 0 goto badchoice
+if !choice! GTR 29 goto badchoice
 
 if "!choice!"=="1" goto install
 if "!choice!"=="2" goto runproject
@@ -188,7 +188,7 @@ if "!choice!"=="26" goto configuration
 if "!choice!"=="27" goto history
 if "!choice!"=="28" goto workspace
 if "!choice!"=="29" goto cleanmenu
-if "!choice!"=="30" goto exit
+if "!choice!"=="0" goto exit
 
 :badchoice
 echo.
@@ -197,9 +197,9 @@ timeout /t 2 >nul
 goto main
 
 
-:: ======================================================
+:: ===============================================================================
 :: PROJECT DETECTION
-:: ======================================================
+:: ===============================================================================
 
 :detect_project
 
@@ -243,9 +243,9 @@ if exist ".git" (
 exit /b
 
 
-:: ======================================================
+:: ===============================================================================
 :: PACKAGE MANAGER DETECTION
-:: ======================================================
+:: ===============================================================================
 
 :detect_package_manager
 
@@ -284,9 +284,9 @@ if "!PM!"=="none" (
 exit /b
 
 
-:: ======================================================
+:: ===============================================================================
 :: INPUT VALIDATION HELPERS
-:: ======================================================
+:: ===============================================================================
 
 :: :confirm_yes  <PromptVarName>
 :: Reads a Y/N answer into the named variable, blank/anything
@@ -325,9 +325,9 @@ endlocal
 exit /b 0
 
 
-:: ======================================================
+:: ===============================================================================
 :: SAFE DELETE
-:: ======================================================
+:: ===============================================================================
 
 :: :safe_rmdir <relative-folder-name>
 :: Only deletes a directory that:
@@ -340,7 +340,7 @@ set "target=%~1"
 
 if not defined target (endlocal & exit /b 1)
 if "!target!"=="." (endlocal & exit /b 1)
-if "!target!"=="..:" (endlocal & exit /b 1)
+if "!target!"==".." (endlocal & exit /b 1)
 if not exist "!target!" (endlocal & exit /b 0)
 
 for %%I in ("!target!") do set "FULLPATH=%%~fI"
@@ -358,9 +358,9 @@ endlocal
 exit /b 0
 
 
-:: ======================================================
+:: ===============================================================================
 :: LOG ROTATION
-:: ======================================================
+:: ===============================================================================
 
 :: :rotate_log <path>  - truncates a log once it exceeds MAX_LOG_BYTES
 :rotate_log
@@ -378,16 +378,16 @@ endlocal
 exit /b
 
 
-:: ======================================================
+:: ===============================================================================
 :: COMMAND EXECUTOR
-:: ======================================================
+:: ===============================================================================
 
 :: :run_command <command-string>
 :: Central place every executed command flows through, so
 :: logging and pass/fail reporting are consistent.
 :run_command
 
-set "COMMAND=%~1"
+set "COMMAND=%*"
 
 echo.
 echo   %CYAN%[COMMAND]%RESET% !COMMAND!
@@ -396,7 +396,7 @@ echo   ----------------------------------------------
 >>"!LOG_FILE!" echo [%date% %time%] !COMMAND!
 >>"!HISTORY_FILE!" echo !COMMAND!
 
-cmd /c "!COMMAND!"
+cmd.exe /d /c "!COMMAND!"
 
 set "CMD_ERROR=!errorlevel!"
 
@@ -409,9 +409,9 @@ if "!CMD_ERROR!"=="0" (
 
 exit /b !CMD_ERROR!
 
-:: ======================================================
+:: ===============================================================================
 :: GIT GLOBAL IGNORE
-:: ======================================================
+:: ===============================================================================
 
 :: Ensures .project-manager/ is permanently ignored for the
 :: current Windows user across all Git repositories.
@@ -444,9 +444,9 @@ if not errorlevel 1 (
 
 exit /b 0
 
-:: ======================================================
+:: ===============================================================================
 :: RECENT PROJECTS TRACKING
-:: ======================================================
+:: ===============================================================================
 
 :remember_project
 setlocal EnableDelayedExpansion
@@ -474,16 +474,16 @@ endlocal
 exit /b
 
 
-:: ======================================================
+:: ===============================================================================
 :: INSTALL DEPENDENCIES
-:: ======================================================
+:: ===============================================================================
 
 :install
 cls
 
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo               INSTALL DEPENDENCIES
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 
 echo.
 
@@ -529,36 +529,36 @@ pause
 goto main
 
 :install_npm
-call :run_command "npm install"
+call :run_command npm install
 pause
 goto main
 
 :install_pnpm
-call :run_command "pnpm install"
+call :run_command pnpm install
 pause
 goto main
 
 :install_yarn
-call :run_command "yarn install"
+call :run_command yarn install
 pause
 goto main
 
 :install_bun
-call :run_command "bun install"
+call :run_command bun install
 pause
 goto main
 
 
-:: ======================================================
+:: ===============================================================================
 :: RUN PROJECT
-:: ======================================================
+:: ===============================================================================
 
 :runproject
 cls
 
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                  RUN PROJECT
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 
 echo.
 
@@ -569,7 +569,7 @@ if not exist "package.json" (
     goto main
 )
 
-findstr /i /c:"\"start\"" package.json >nul 2>&1
+call :has_npm_script "start"
 
 if errorlevel 1 (
     echo   %YELLOW%[WARNING] No start script found.%RESET%
@@ -591,16 +591,16 @@ pause
 goto main
 
 
-:: ======================================================
+:: ===============================================================================
 :: DEVELOPMENT SERVER
-:: ======================================================
+:: ===============================================================================
 
 :dev
 cls
 
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                DEVELOPMENT SERVER
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 
 echo.
 
@@ -610,7 +610,7 @@ if not exist "package.json" (
     goto main
 )
 
-findstr /i /c:"\"dev\"" package.json >nul 2>&1
+call :has_npm_script "dev"
 
 if errorlevel 1 (
     echo   %YELLOW%[WARNING] No dev script found.%RESET%
@@ -630,22 +630,22 @@ pause
 goto main
 
 
-:: ======================================================
+:: ===============================================================================
 :: BUILD PROJECT
-:: ======================================================
+:: ===============================================================================
 
 :buildproject
 cls
 
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                   BUILD PROJECT
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 
 echo.
 
 if not exist "package.json" goto typescript_build
 
-findstr /i /c:"\"build\"" package.json >nul 2>&1
+call :has_npm_script "build"
 
 if not errorlevel 1 (
     echo   [INFO] Build script detected.
@@ -653,10 +653,7 @@ if not errorlevel 1 (
     echo   Running package build...
     echo.
 
-    if /i "!PM!"=="npm" call :run_command "npm run build"
-    if /i "!PM!"=="pnpm" call :run_command "pnpm build"
-    if /i "!PM!"=="yarn" call :run_command "yarn build"
-    if /i "!PM!"=="bun" call :run_command "bun run build"
+    call :run_pm_script "build"
 
     pause
     goto main
@@ -671,7 +668,7 @@ if exist "tsconfig.json" (
     echo   Running TypeScript compiler...
     echo.
 
-    call :run_command "npx tsc"
+    call :run_command npx tsc
 
     pause
     goto main
@@ -685,16 +682,61 @@ pause
 goto main
 
 
-:: ======================================================
+:: ===============================================================================
+:: PACKAGE MANAGER COMMAND HELPERS
+:: ===============================================================================
+
+:run_pm_script
+:: :run_pm_script <script-name>
+:: Runs the same package.json script with the detected package manager.
+set "PM_SCRIPT=%~1"
+if /i "!PM!"=="npm" (
+    call :run_command npm run !PM_SCRIPT!
+    exit /b !errorlevel!
+)
+if /i "!PM!"=="pnpm" (
+    call :run_command pnpm run !PM_SCRIPT!
+    exit /b !errorlevel!
+)
+if /i "!PM!"=="yarn" (
+    call :run_command yarn run !PM_SCRIPT!
+    exit /b !errorlevel!
+)
+if /i "!PM!"=="bun" (
+    call :run_command bun run !PM_SCRIPT!
+    exit /b !errorlevel!
+)
+exit /b 1
+
+:run_pm_install
+if /i "!PM!"=="npm" (
+    call :run_command npm install
+    exit /b !errorlevel!
+)
+if /i "!PM!"=="pnpm" (
+    call :run_command pnpm install
+    exit /b !errorlevel!
+)
+if /i "!PM!"=="yarn" (
+    call :run_command yarn install
+    exit /b !errorlevel!
+)
+if /i "!PM!"=="bun" (
+    call :run_command bun install
+    exit /b !errorlevel!
+)
+exit /b 1
+
+:: ===============================================================================
 :: CUSTOM SCRIPT
-:: ======================================================
+:: ===============================================================================
 
 :customscript
 cls
 
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                RUN CUSTOM SCRIPT
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 
 echo.
 
@@ -726,49 +768,37 @@ if errorlevel 1 (
 
 echo.
 
-if /i "!PM!"=="npm" call :run_command "npm run !custom!"
-if /i "!PM!"=="pnpm" call :run_command "pnpm !custom!"
-if /i "!PM!"=="yarn" call :run_command "yarn !custom!"
-if /i "!PM!"=="bun" call :run_command "bun run !custom!"
+call :run_pm_script "!custom!"
 
 pause
 goto main
 
 
-:: ======================================================
+:: ===============================================================================
 :: SHOW PACKAGE SCRIPTS
-:: ======================================================
+:: ===============================================================================
+
+:has_npm_script
+:: :has_npm_script <script-name> -> errorlevel 0 when script exists
+set "CHECK_SCRIPT=%~1"
+if not exist "package.json" exit /b 1
+powershell -NoProfile -Command "$j=Get-Content -Raw 'package.json' | ConvertFrom-Json; if($j.scripts -and $j.scripts.PSObject.Properties.Name -contains '%CHECK_SCRIPT%'){exit 0}else{exit 1}" >nul 2>&1
+exit /b %errorlevel%
+
 
 :show_scripts
-
 if not exist "package.json" exit /b
 
-findstr /i "\"scripts\"" package.json >nul 2>&1
-
-if errorlevel 1 (
-    echo   No scripts detected.
-    exit /b
-)
-
-echo.
-echo   package.json scripts:
-echo   ----------------------------------------------
-
-findstr /i /r "\"[a-zA-Z0-9:_-]*\"[ ]*:" package.json
-
+powershell -NoProfile -Command "$j=Get-Content -Raw 'package.json' | ConvertFrom-Json; if($j.scripts){$j.scripts.PSObject.Properties | ForEach-Object {Write-Host ('  {0} : {1}' -f $_.Name,$_.Value)}}else{Write-Host '  No scripts detected.'}"
 exit /b
 
-
-:: ======================================================
-:: PACKAGE SCRIPTS (menu option 12)
-:: ======================================================
 
 :scripts
 cls
 
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                 PACKAGE SCRIPTS
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 
 if not exist "package.json" (
     echo.
@@ -785,16 +815,16 @@ pause
 goto main
 
 
-:: ======================================================
+:: ===============================================================================
 :: TEST
-:: ======================================================
+:: ===============================================================================
 
 :test
 cls
 
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                      TEST
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 
 echo.
 
@@ -804,7 +834,7 @@ if not exist "package.json" (
     goto main
 )
 
-findstr /i /c:"\"test\"" package.json >nul 2>&1
+call :has_npm_script "test"
 
 if errorlevel 1 (
     echo   %YELLOW%[WARNING] No test script found.%RESET%
@@ -812,25 +842,22 @@ if errorlevel 1 (
     goto main
 )
 
-if /i "!PM!"=="npm" call :run_command "npm test"
-if /i "!PM!"=="pnpm" call :run_command "pnpm test"
-if /i "!PM!"=="yarn" call :run_command "yarn test"
-if /i "!PM!"=="bun" call :run_command "bun test"
+call :run_pm_script "test"
 
 pause
 goto main
 
 
-:: ======================================================
+:: ===============================================================================
 :: LINT
-:: ======================================================
+:: ===============================================================================
 
 :lint
 cls
 
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                        LINT
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 
 echo.
 
@@ -840,7 +867,7 @@ if not exist "package.json" (
     goto main
 )
 
-findstr /i /c:"\"lint\"" package.json >nul 2>&1
+call :has_npm_script "lint"
 
 if errorlevel 1 (
     echo   %YELLOW%[WARNING] No lint script found.%RESET%
@@ -848,25 +875,22 @@ if errorlevel 1 (
     goto main
 )
 
-if /i "!PM!"=="npm" call :run_command "npm run lint"
-if /i "!PM!"=="pnpm" call :run_command "pnpm lint"
-if /i "!PM!"=="yarn" call :run_command "yarn lint"
-if /i "!PM!"=="bun" call :run_command "bun run lint"
+call :run_pm_script "lint"
 
 pause
 goto main
 
 
-:: ======================================================
+:: ===============================================================================
 :: FORMAT
-:: ======================================================
+:: ===============================================================================
 
 :format
 cls
 
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                      FORMAT
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 
 echo.
 
@@ -876,7 +900,7 @@ if not exist "package.json" (
     goto main
 )
 
-findstr /i /c:"\"format\"" package.json >nul 2>&1
+call :has_npm_script "format"
 
 if errorlevel 1 (
     echo   %YELLOW%[WARNING] No format script found.%RESET%
@@ -884,30 +908,27 @@ if errorlevel 1 (
     goto main
 )
 
-if /i "!PM!"=="npm" call :run_command "npm run format"
-if /i "!PM!"=="pnpm" call :run_command "pnpm format"
-if /i "!PM!"=="yarn" call :run_command "yarn format"
-if /i "!PM!"=="bun" call :run_command "bun run format"
+call :run_pm_script "format"
 
 pause
 goto main
 
 
-:: ================================================
+:: =========================================================================
 :: TYPE CHECK
-:: ================================================
+:: =========================================================================
 
 :typecheck
 cls
 
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                    TYPE CHECK
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 
 echo.
 
 if exist "tsconfig.json" (
-    call :run_command "npx tsc --noEmit"
+    call :run_command npx tsc --noEmit
     pause
     goto main
 )
@@ -918,13 +939,10 @@ if not exist "package.json" (
     goto main
 )
 
-findstr /i /c:"\"typecheck\"" package.json >nul 2>&1
+call :has_npm_script "typecheck"
 
 if not errorlevel 1 (
-    if /i "!PM!"=="npm" call :run_command "npm run typecheck"
-    if /i "!PM!"=="pnpm" call :run_command "pnpm typecheck"
-    if /i "!PM!"=="yarn" call :run_command "yarn typecheck"
-    if /i "!PM!"=="bun" call :run_command "bun run typecheck"
+    call :run_pm_script "typecheck"
 ) else (
     echo   %YELLOW%[INFO] No TypeScript configuration or typecheck script found.%RESET%
 )
@@ -933,16 +951,16 @@ pause
 goto main
 
 
-:: ================================================
+:: =========================================================================
 :: PROJECT STATUS
-:: ================================================
+:: =========================================================================
 
 :status
 cls
 
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                 PROJECT STATUS
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 
 echo.
 echo   [Project]
@@ -1011,16 +1029,16 @@ pause
 goto main
 
 
-:: ================================================
+:: =========================================================================
 :: PACKAGE UPDATES
-:: ================================================
+:: =========================================================================
 
 :updates
 cls
 
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                 PACKAGE UPDATES
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 
 echo.
 
@@ -1030,26 +1048,26 @@ if not exist "package.json" (
     goto main
 )
 
-if /i "!PM!"=="npm" call :run_command "npm outdated"
-if /i "!PM!"=="pnpm" call :run_command "pnpm outdated"
-if /i "!PM!"=="yarn" call :run_command "yarn outdated"
-if /i "!PM!"=="bun" call :run_command "bun outdated"
+if /i "!PM!"=="npm" call :run_command npm outdated
+if /i "!PM!"=="pnpm" call :run_command pnpm outdated
+if /i "!PM!"=="yarn" call :run_command yarn outdated
+if /i "!PM!"=="bun" call :run_command bun outdated
 
 echo.
 pause
 goto main
 
 
-:: ================================================
+:: =========================================================================
 :: ENVIRONMENT INFO
-:: ================================================
+:: =========================================================================
 
 :environment
 cls
 
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                ENVIRONMENT INFO
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 
 echo.
 
@@ -1104,16 +1122,16 @@ pause
 goto main
 
 
-:: ================================================
+:: =========================================================================
 :: PROJECT DIAGNOSTICS
-:: ================================================
+:: =========================================================================
 
 :diagnostics
 cls
 
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo               PROJECT DIAGNOSTICS
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 
 echo.
 
@@ -1161,7 +1179,7 @@ if exist ".env" (
 set /a TOTAL+=1
 
 if exist "package.json" (
-    findstr /i /c:"\"build\"" package.json >nul 2>&1
+    call :has_npm_script "build"
     if not errorlevel 1 (
         echo   %GREEN%[OK] Build script found%RESET%
         set /a HEALTH+=1
@@ -1172,7 +1190,7 @@ if exist "package.json" (
 set /a TOTAL+=1
 
 if exist "package.json" (
-    findstr /i /c:"\"dev\"" package.json >nul 2>&1
+    call :has_npm_script "dev"
     if not errorlevel 1 (
         echo   %GREEN%[OK] Dev script found%RESET%
         set /a HEALTH+=1
@@ -1202,16 +1220,16 @@ pause
 goto main
 
 
-:: ================================================
+:: =========================================================================
 :: PORT CHECKER
-:: ================================================
+:: =========================================================================
 
 :ports
 cls
 
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                   PORT CHECKER
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 
 echo.
 set "port="
@@ -1257,22 +1275,22 @@ pause
 goto main
 
 
-:: ================================================
+:: =========================================================================
 :: PROCESS MANAGER
-:: ================================================
+:: =========================================================================
 
 :processes
 cls
 
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                 PROCESS MANAGER
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 
 echo.
-echo   1. Find Process
-echo   2. Kill Process
-echo   3. Find Port Owner
-echo   4. Back
+echo   1. Find a running program              [tasklist | findstr]
+echo   2. Stop a program by PID               [taskkill /PID /F]
+echo   3. Find which program uses a port      [netstat -ano]
+echo   0. Back
 echo.
 
 set "pc="
@@ -1281,7 +1299,7 @@ set /p "pc=  Select option: "
 if "!pc!"=="1" goto findprocess
 if "!pc!"=="2" goto killprocess
 if "!pc!"=="3" goto portowner
-if "!pc!"=="4" goto main
+if "!pc!"=="0" goto main
 
 goto processes
 
@@ -1289,9 +1307,9 @@ goto processes
 :findprocess
 cls
 
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                   FIND PROCESS
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 
 echo.
 set "pname="
@@ -1317,9 +1335,9 @@ goto processes
 :killprocess
 cls
 
-echo %RED%================================================
+echo %RED%=========================================================================
 echo                   KILL PROCESS
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 
 echo.
 set "pid="
@@ -1351,9 +1369,9 @@ goto processes
 :portowner
 cls
 
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                   PORT OWNER
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 
 echo.
 set "port="
@@ -1377,16 +1395,16 @@ pause
 goto processes
 
 
-:: ================================================
+:: =========================================================================
 :: GIT STATUS
-:: ================================================
+:: =========================================================================
 
 :gitstatus
 cls
 
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                    GIT STATUS
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 
 echo.
 
@@ -1420,59 +1438,59 @@ pause
 goto main
 
 
-:: ================================================
+:: =========================================================================
 :: GIT MANAGER
-:: ================================================
+:: =========================================================================
 
 :gitmanager
 cls
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                    GIT MANAGER
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 echo.
 echo   Repository: %GREEN%!PROJECT_NAME!%RESET%
 echo   Main Branch: %GREEN%!GIT_MAIN!%RESET%
 echo   Origin Remote: %GREEN%!GIT_ORIGIN!%RESET%
 echo.
 echo   ----------------------------------------------
-echo    1.  Repository / Init
-echo    2.  Status
-echo    3.  Stage Changes
-echo    4.  Unstage Changes
-echo    5.  Commit
-echo    6.  Amend Last Commit
+echo    1.  Create Git repository if needed    [git init]
+echo    2.  See Git status                     [git status]
+echo    3.  Select changes to include          [git add -A / git add]
+echo    4.  Remove files from staging          [git restore --staged]
+echo    5.  Save changes as a commit           [git commit -m]
+echo    6.  Edit the last commit               [git commit --amend]
 echo   ----------------------------------------------
-echo    7.  Branch Manager
-echo    8.  Remote Manager
-echo    9.  Fetch
-echo   10.  Pull
-echo   11.  Push
-echo   12.  Sync Main ^<--^> Origin
+echo    7.  Manage branches (create/switch/delete) [git branch/switch]
+echo    8.  Manage GitHub/remote connection    [git remote]
+echo    9.  Download remote changes            [git fetch]
+echo   10.  Download + merge remote changes    [git pull]
+echo   11.  Upload local commits               [git push]
+echo   12.  Synchronize main with origin       [git fetch/pull/push]
 echo   ----------------------------------------------
-echo   13.  History / Log
-echo   14.  Diff
-echo   15.  Stash Manager
-echo   16.  Tag Manager
-echo   17.  Rebase
-echo   18.  Merge
-echo   19.  Cherry-pick
-echo   20.  Revert Commit
+echo   13.  View commit history                [git log]
+echo   14.  Compare file/code changes          [git diff]
+echo   15.  Temporarily save unfinished work   [git stash]
+echo   16.  Manage release/version tags        [git tag]
+echo   17.  Reapply commits on top of main     [git rebase]
+echo   18.  Combine another branch into this one [git merge]
+echo   19.  Copy a commit to this branch       [git cherry-pick]
+echo   20.  Undo a commit safely with a new commit [git revert]
 echo   ----------------------------------------------
-echo   21.  Reset / Restore
-echo   22.  Clean Untracked Files
-echo   23.  Submodule Manager
-echo   24.  Git Config
-echo   25.  Git Ignore
-echo   26.  Show Refs
-echo   27.  Git Information
-echo   28.  Set Main / Origin
+echo   21.  Restore/reset project files        [git restore/reset]
+echo   22.  Remove untracked files             [git clean]
+echo   23.  Manage Git submodules              [git submodule]
+echo   24.  Configure Git name/email           [git config]
+echo   25.  Manage ignored files               [git ignore/check-ignore]
+echo   26.  Inspect Git references             [git show-ref/reflog]
+echo   27.  View Git technical information     [git info/rev-parse]
+echo   28.  Set default Main branch/Origin     [PMAN settings]
 echo   ----------------------------------------------
-echo   29.  Back
+echo   0. Back to main menu
 echo.
 set "gc="
 set /p "gc=  Select option: "
 if "!gc!"=="1" goto gitrepo
-if "!gc!"=="2" goto gitstatus
+if "!gc!"=="2" goto gitmanager_status
 if "!gc!"=="3" goto gitstage
 if "!gc!"=="4" goto gitunstage
 if "!gc!"=="5" goto gitcommit
@@ -1499,19 +1517,19 @@ if "!gc!"=="25" goto gitignore
 if "!gc!"=="26" goto gitrefs
 if "!gc!"=="27" goto gitinfo
 if "!gc!"=="28" goto gitdefaults
-if "!gc!"=="29" goto main
+if "!gc!"=="0" goto main
 goto gitmanager
 
 
-:: ======================================================
+:: ===============================================================================
 :: GIT DEFAULTS
-:: ======================================================
+:: ===============================================================================
 
 :gitdefaults
 cls
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                MAIN / ORIGIN SETTINGS
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 echo.
 echo   Main branch  : !GIT_MAIN!
 echo   Origin remote: !GIT_ORIGIN!
@@ -1519,7 +1537,7 @@ echo.
 echo   1. Set Main Branch
 echo   2. Set Origin Remote
 echo   3. Reset to main / origin
-echo   4. Back
+echo   0. Back
 echo.
 set "gd="
 set /p "gd=  Select option: "
@@ -1548,60 +1566,60 @@ if "!gd!"=="3" (
     set "GIT_ORIGIN=origin"
     goto gitdefaults
 )
-if "!gd!"=="4" goto gitmanager
+if "!gd!"=="0" goto gitmanager
 goto gitdefaults
 
 
-:: ======================================================
+:: ===============================================================================
 :: GIT REPOSITORY
-:: ======================================================
+:: ===============================================================================
 
 :gitrepo
 cls
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                REPOSITORY / INIT
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 echo.
 echo   Main: !GIT_MAIN!    Origin: !GIT_ORIGIN!
 echo.
-echo   1. Initialize repository
-echo   2. Show repository root
-echo   3. Show .git directory
-echo   4. Add remote origin
-echo   5. Remove remote origin
-echo   6. Rename current branch to main
-echo   7. Back
+echo   1. Create Git repository here          [git init]
+echo   2. Show project Git root               [git rev-parse --show-toplevel]
+echo   3. Show Git internal folder            [git rev-parse --git-dir]
+echo   4. Connect this project to Origin      [git remote add origin URL]
+echo   5. Remove Origin connection            [git remote remove origin]
+echo   6. Rename current branch to Main       [git branch -M main]
+echo   0. Back
 echo.
 set "x="
 set /p "x=  Select option: "
-if "!x!"=="1" call :run_command "git init"
-if "!x!"=="2" call :run_command "git rev-parse --show-toplevel"
-if "!x!"=="3" call :run_command "git rev-parse --git-dir"
+if "!x!"=="1" call :run_command git init
+if "!x!"=="2" call :run_command git rev-parse --show-toplevel
+if "!x!"=="3" call :run_command git rev-parse --git-dir
 if "!x!"=="4" (
     set "url="
     set /p "url=  Remote URL: "
-    if defined url call :run_command "git remote add !GIT_ORIGIN! !url!"
+    if defined url call :run_command git remote add !GIT_ORIGIN! !url!
 )
-if "!x!"=="5" call :run_command "git remote remove !GIT_ORIGIN!"
-if "!x!"=="6" call :run_command "git branch -M !GIT_MAIN!"
-if "!x!"=="7" goto gitmanager
+if "!x!"=="5" call :run_command git remote remove !GIT_ORIGIN!
+if "!x!"=="6" call :run_command git branch -M !GIT_MAIN!
+if "!x!"=="0" goto gitmanager
 pause
 goto gitrepo
 
 
-:: ======================================================
+:: ===============================================================================
 :: GIT STATUS
-:: ======================================================
+:: ===============================================================================
 
-:gitstatus
+:gitmanager_status
 cls
-echo %CYAN%================================================
-echo                     GIT STATUS
-echo ================================================%RESET%
+echo %CYAN%=========================================================================
+echo                GIT REPOSITORY STATUS
+echo =========================================================================%RESET%
 echo.
 echo   Main: !GIT_MAIN!    Origin: !GIT_ORIGIN!
 echo.
-call :run_command "git status"
+call :run_command git status
 echo.
 echo   Current branch:
 git branch --show-current
@@ -1612,68 +1630,68 @@ pause
 goto gitmanager
 
 
-:: ======================================================
+:: ===============================================================================
 :: STAGE / UNSTAGE
-:: ======================================================
+:: ===============================================================================
 
 :gitstage
 cls
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                   STAGE CHANGES
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 echo.
 echo   Main: !GIT_MAIN!    Origin: !GIT_ORIGIN!
 echo.
-echo   1. Stage all
-echo   2. Stage a file/folder
-echo   3. Interactive staging
-echo   4. Back
+echo   1. Stage all changed files             [git add -A]
+echo   2. Stage only a file/folder            [git add -- FILE]
+echo   3. Choose changes interactively        [git add -p]
+echo   0. Back
 echo.
 set "x="
 set /p "x=  Select option: "
-if "!x!"=="1" call :run_command "git add -A"
+if "!x!"=="1" call :run_command git add -A
 if "!x!"=="2" (
     set "p="
     set /p "p=  File/folder: "
-    if defined p call :run_command "git add -- !p!"
+    if defined p call :run_command git add -- !p!
 )
-if "!x!"=="3" call :run_command "git add -p"
-if "!x!"=="4" goto gitmanager
+if "!x!"=="3" call :run_command git add -p
+if "!x!"=="0" goto gitmanager
 pause
 goto gitstage
 
 :gitunstage
 cls
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                  UNSTAGE CHANGES
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 echo.
-echo   1. Unstage all
-echo   2. Unstage a file/folder
-echo   3. Back
+echo   1. Unstage all files                   [git restore --staged .]
+echo   2. Unstage one file/folder             [git restore --staged -- FILE]
+echo   0. Back
 echo.
 set "x="
 set /p "x=  Select option: "
-if "!x!"=="1" call :run_command "git restore --staged ."
+if "!x!"=="1" call :run_command git restore --staged .
 if "!x!"=="2" (
     set "p="
     set /p "p=  File/folder: "
-    if defined p call :run_command "git restore --staged -- !p!"
+    if defined p call :run_command git restore --staged -- !p!
 )
-if "!x!"=="3" goto gitmanager
+if "!x!"=="0" goto gitmanager
 pause
 goto gitunstage
 
 
-:: ======================================================
+:: ===============================================================================
 :: GIT COMMIT
-:: ======================================================
+:: ===============================================================================
 
 :gitcommit
 cls
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                       COMMIT
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 echo.
 echo   Main: !GIT_MAIN!    Origin: !GIT_ORIGIN!
 echo.
@@ -1682,593 +1700,593 @@ echo.
 set "msg="
 set /p "msg=  Commit message: "
 if not defined msg goto gitmanager
-call :run_command "git commit -m "!msg!""
+call :run_command git commit -m "!msg!"
 pause
 goto gitmanager
 
 :gitamend
 cls
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                  AMEND LAST COMMIT
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 echo.
 git log -1 --oneline
 echo.
 echo   1. Amend using existing message
 echo   2. Amend with new message
-echo   3. Back
+echo   0. Back
 echo.
 set "x="
 set /p "x=  Select option: "
-if "!x!"=="1" call :run_command "git commit --amend --no-edit"
+if "!x!"=="1" call :run_command git commit --amend --no-edit
 if "!x!"=="2" (
     set "msg="
     set /p "msg=  New commit message: "
-    if defined msg call :run_command "git commit --amend -m "!msg!""
+    if defined msg call :run_command git commit --amend -m "!msg!"
 )
-if "!x!"=="3" goto gitmanager
+if "!x!"=="0" goto gitmanager
 pause
 goto gitamend
 
 
-:: ======================================================
+:: ===============================================================================
 :: BRANCH MANAGER
-:: ======================================================
+:: ===============================================================================
 
 :gitbranches
 cls
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                    BRANCH MANAGER
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 echo.
 echo   Main: !GIT_MAIN!    Origin: !GIT_ORIGIN!
 echo.
-echo   1. List local branches
-echo   2. List all branches
-echo   3. Create branch
-echo   4. Switch branch
-echo   5. Create + switch branch
-echo   6. Rename current branch
-echo   7. Delete local branch
-echo   8. Force delete local branch
-echo   9. Merge branch into current
-echo  10. Rebase current onto main
-echo  11. Show remote branches
-echo  12. Delete remote branch from origin
-echo  13. Back
+echo   1. Show local branches                 [git branch]
+echo   2. Show local + remote branches        [git branch -a]
+echo   3. Create a new branch                 [git branch NAME]
+echo   4. Switch to another branch            [git switch NAME]
+echo   5. Create and switch to a branch       [git switch -c NAME]
+echo   6. Rename the current branch           [git branch -m NAME]
+echo   7. Delete a merged local branch        [git branch -d NAME]
+echo   8. Force-delete a local branch         [git branch -D NAME]
+echo   9. Merge another branch into current   [git merge NAME]
+echo  10. Rebase current branch onto Main     [git rebase main]
+echo  11. Show remote branches                [git branch -r]
+echo  12. Delete a branch from Origin         [git push origin --delete NAME]
+echo  0. Back
 echo.
 set "x="
 set /p "x=  Select option: "
-if "!x!"=="1" call :run_command "git branch"
-if "!x!"=="2" call :run_command "git branch -a"
+if "!x!"=="1" call :run_command git branch
+if "!x!"=="2" call :run_command git branch -a
 if "!x!"=="3" (
     set "b="
     set /p "b=  New branch: "
-    if defined b call :run_command "git branch !b!"
+    if defined b call :run_command git branch !b!
 )
 if "!x!"=="4" (
     set "b="
     set /p "b=  Switch to branch: "
-    if defined b call :run_command "git switch !b!"
+    if defined b call :run_command git switch !b!
 )
 if "!x!"=="5" (
     set "b="
     set /p "b=  New branch: "
-    if defined b call :run_command "git switch -c !b!"
+    if defined b call :run_command git switch -c !b!
 )
 if "!x!"=="6" (
     set "b="
     set /p "b=  New name: "
-    if defined b call :run_command "git branch -m !b!"
+    if defined b call :run_command git branch -m !b!
 )
 if "!x!"=="7" (
     set "b="
     set /p "b=  Branch to delete: "
-    if defined b call :run_command "git branch -d !b!"
+    if defined b call :run_command git branch -d !b!
 )
 if "!x!"=="8" (
     set "b="
     set /p "b=  Branch to force delete: "
-    if defined b call :run_command "git branch -D !b!"
+    if defined b call :run_command git branch -D !b!
 )
 if "!x!"=="9" (
     set "b="
     set /p "b=  Branch to merge: "
-    if defined b call :run_command "git merge !b!"
+    if defined b call :run_command git merge !b!
 )
-if "!x!"=="10" call :run_command "git rebase !GIT_MAIN!"
-if "!x!"=="11" call :run_command "git branch -r"
+if "!x!"=="10" call :run_command git rebase !GIT_MAIN!
+if "!x!"=="11" call :run_command git branch -r
 if "!x!"=="12" (
     set "b="
     set /p "b=  Remote branch to delete: "
-    if defined b call :run_command "git push !GIT_ORIGIN! --delete !b!"
+    if defined b call :run_command git push !GIT_ORIGIN! --delete !b!
 )
-if "!x!"=="13" goto gitmanager
+if "!x!"=="0" goto gitmanager
 pause
 goto gitbranches
 
 
-:: ======================================================
+:: ===============================================================================
 :: REMOTE MANAGER
-:: ======================================================
+:: ===============================================================================
 
 :gitremotes
 cls
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                    REMOTE MANAGER
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 echo.
 echo   Main: !GIT_MAIN!    Origin: !GIT_ORIGIN!
 echo.
-echo   1. List remotes
-echo   2. Show origin
-echo   3. Add origin
-echo   4. Change origin URL
-echo   5. Show origin URL
-echo   6. Remove origin
-echo   7. Fetch origin
-echo   8. Prune deleted origin branches
-echo   9. Back
+echo   1. Show all remote connections        [git remote -v]
+echo   2. Inspect Origin connection          [git remote show origin]
+echo   3. Connect a repository to Origin     [git remote add origin URL]
+echo   4. Change Origin URL                  [git remote set-url origin URL]
+echo   5. Show Origin URL                    [git remote get-url origin]
+echo   6. Remove Origin connection           [git remote remove origin]
+echo   7. Download latest remote information [git fetch origin]
+echo   8. Remove deleted remote branches     [git fetch origin --prune]
+echo   0. Back
 echo.
 set "x="
 set /p "x=  Select option: "
-if "!x!"=="1" call :run_command "git remote -v"
-if "!x!"=="2" call :run_command "git remote show !GIT_ORIGIN!"
+if "!x!"=="1" call :run_command git remote -v
+if "!x!"=="2" call :run_command git remote show !GIT_ORIGIN!
 if "!x!"=="3" (
     set "url="
     set /p "url=  Origin URL: "
-    if defined url call :run_command "git remote add !GIT_ORIGIN! !url!"
+    if defined url call :run_command git remote add !GIT_ORIGIN! !url!
 )
 if "!x!"=="4" (
     set "url="
     set /p "url=  New origin URL: "
-    if defined url call :run_command "git remote set-url !GIT_ORIGIN! !url!"
+    if defined url call :run_command git remote set-url !GIT_ORIGIN! !url!
 )
-if "!x!"=="5" call :run_command "git remote get-url !GIT_ORIGIN!"
-if "!x!"=="6" call :run_command "git remote remove !GIT_ORIGIN!"
-if "!x!"=="7" call :run_command "git fetch !GIT_ORIGIN!"
-if "!x!"=="8" call :run_command "git fetch !GIT_ORIGIN! --prune"
-if "!x!"=="9" goto gitmanager
+if "!x!"=="5" call :run_command git remote get-url !GIT_ORIGIN!
+if "!x!"=="6" call :run_command git remote remove !GIT_ORIGIN!
+if "!x!"=="7" call :run_command git fetch !GIT_ORIGIN!
+if "!x!"=="8" call :run_command git fetch !GIT_ORIGIN! --prune
+if "!x!"=="0" goto gitmanager
 pause
 goto gitremotes
 
 
-:: ======================================================
+:: ===============================================================================
 :: FETCH / PULL / PUSH / SYNC
-:: ======================================================
+:: ===============================================================================
 
 :gitfetch
 cls
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                       FETCH
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 echo   Main: !GIT_MAIN!    Origin: !GIT_ORIGIN!
 echo.
-echo   1. Fetch origin
-echo   2. Fetch origin + prune
-echo   3. Fetch all remotes
-echo   4. Fetch + tags
-echo   5. Back
+echo   1. Download Origin updates              [git fetch origin]
+echo   2. Download + remove stale branches     [git fetch origin --prune]
+echo   3. Download from all remotes            [git fetch --all]
+echo   4. Download remote tags                 [git fetch origin --tags]
+echo   0. Back
 echo.
 set "x="
 set /p "x=  Select option: "
-if "!x!"=="1" call :run_command "git fetch !GIT_ORIGIN!"
-if "!x!"=="2" call :run_command "git fetch !GIT_ORIGIN! --prune"
-if "!x!"=="3" call :run_command "git fetch --all"
-if "!x!"=="4" call :run_command "git fetch !GIT_ORIGIN! --tags"
-if "!x!"=="5" goto gitmanager
+if "!x!"=="1" call :run_command git fetch !GIT_ORIGIN!
+if "!x!"=="2" call :run_command git fetch !GIT_ORIGIN! --prune
+if "!x!"=="3" call :run_command git fetch --all
+if "!x!"=="4" call :run_command git fetch !GIT_ORIGIN! --tags
+if "!x!"=="0" goto gitmanager
 pause
 goto gitfetch
 
 :gitpull
 cls
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                        PULL
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 echo   Main: !GIT_MAIN!    Origin: !GIT_ORIGIN!
 echo.
-echo   1. Pull origin/main
-echo   2. Pull with rebase
-echo   3. Pull all tags
-echo   4. Pull current tracking branch
-echo   5. Back
+echo   1. Download and merge Origin/Main      [git pull origin main]
+echo   2. Download and rebase onto Main       [git pull --rebase origin main]
+echo   3. Download remote tags                [git pull origin --tags]
+echo   4. Update current tracking branch      [git pull]
+echo   0. Back
 echo.
 set "x="
 set /p "x=  Select option: "
-if "!x!"=="1" call :run_command "git pull !GIT_ORIGIN! !GIT_MAIN!"
-if "!x!"=="2" call :run_command "git pull --rebase !GIT_ORIGIN! !GIT_MAIN!"
-if "!x!"=="3" call :run_command "git pull !GIT_ORIGIN! --tags"
-if "!x!"=="4" call :run_command "git pull"
-if "!x!"=="5" goto gitmanager
+if "!x!"=="1" call :run_command git pull !GIT_ORIGIN! !GIT_MAIN!
+if "!x!"=="2" call :run_command git pull --rebase !GIT_ORIGIN! !GIT_MAIN!
+if "!x!"=="3" call :run_command git pull !GIT_ORIGIN! --tags
+if "!x!"=="4" call :run_command git pull
+if "!x!"=="0" goto gitmanager
 pause
 goto gitpull
 
 :gitpush
 cls
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                        PUSH
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 echo   Main: !GIT_MAIN!    Origin: !GIT_ORIGIN!
 echo.
-echo   1. Push main to origin
-echo   2. Push current branch
-echo   3. Push current + set upstream
-echo   4. Push all branches
-echo   5. Push tags
-echo   6. Force-with-lease main to origin
-echo   7. Back
+echo   1. Upload Main to Origin               [git push origin main]
+echo   2. Upload current branch               [git push]
+echo   3. Upload + remember upstream          [git push -u origin HEAD]
+echo   4. Upload all local branches           [git push origin --all]
+echo   5. Upload all tags                     [git push origin --tags]
+echo   6. Safely force-update Origin/Main     [git push --force-with-lease]
+echo   0. Back
 echo.
 set "x="
 set /p "x=  Select option: "
-if "!x!"=="1" call :run_command "git push !GIT_ORIGIN! !GIT_MAIN!"
-if "!x!"=="2" call :run_command "git push"
-if "!x!"=="3" call :run_command "git push -u !GIT_ORIGIN! HEAD"
-if "!x!"=="4" call :run_command "git push !GIT_ORIGIN! --all"
-if "!x!"=="5" call :run_command "git push !GIT_ORIGIN! --tags"
-if "!x!"=="6" call :run_command "git push !GIT_ORIGIN! !GIT_MAIN! --force-with-lease"
-if "!x!"=="7" goto gitmanager
+if "!x!"=="1" call :run_command git push !GIT_ORIGIN! !GIT_MAIN!
+if "!x!"=="2" call :run_command git push
+if "!x!"=="3" call :run_command git push -u !GIT_ORIGIN! HEAD
+if "!x!"=="4" call :run_command git push !GIT_ORIGIN! --all
+if "!x!"=="5" call :run_command git push !GIT_ORIGIN! --tags
+if "!x!"=="6" call :run_command git push !GIT_ORIGIN! !GIT_MAIN! --force-with-lease
+if "!x!"=="0" goto gitmanager
 pause
 goto gitpush
 
 :gitsync
 cls
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                MAIN ^<--^> ORIGIN SYNC
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 echo.
 echo   Local main : !GIT_MAIN!
 echo   Remote     : !GIT_ORIGIN!
 echo   Remote main: !GIT_ORIGIN!/!GIT_MAIN!
 echo.
-echo   1. Fetch origin
-echo   2. Pull origin/main into local main
-echo   3. Push local main to origin/main
-echo   4. Fetch + pull + push
-echo   5. Compare local main with origin/main
-echo   6. Back
+echo   1. Download latest Origin/Main info    [git fetch origin]
+echo   2. Bring Origin/Main into local Main   [git pull origin main]
+echo   3. Upload local Main to Origin/Main    [git push origin main]
+echo   4. Download + pull + upload            [fetch + pull + push]
+echo   5. Compare Main with Origin/Main       [git diff main..origin/main]
+echo   0. Back
 echo.
 set "x="
 set /p "x=  Select option: "
-if "!x!"=="1" call :run_command "git fetch !GIT_ORIGIN!"
-if "!x!"=="2" call :run_command "git pull !GIT_ORIGIN! !GIT_MAIN!"
-if "!x!"=="3" call :run_command "git push !GIT_ORIGIN! !GIT_MAIN!"
+if "!x!"=="1" call :run_command git fetch !GIT_ORIGIN!
+if "!x!"=="2" call :run_command git pull !GIT_ORIGIN! !GIT_MAIN!
+if "!x!"=="3" call :run_command git push !GIT_ORIGIN! !GIT_MAIN!
 if "!x!"=="4" (
-    call :run_command "git fetch !GIT_ORIGIN!"
-    call :run_command "git pull !GIT_ORIGIN! !GIT_MAIN!"
-    call :run_command "git push !GIT_ORIGIN! !GIT_MAIN!"
+    call :run_command git fetch !GIT_ORIGIN!
+    call :run_command git pull !GIT_ORIGIN! !GIT_MAIN!
+    call :run_command git push !GIT_ORIGIN! !GIT_MAIN!
 )
-if "!x!"=="5" call :run_command "git diff !GIT_MAIN!..!GIT_ORIGIN!/!GIT_MAIN!"
-if "!x!"=="6" goto gitmanager
+if "!x!"=="5" call :run_command git diff !GIT_MAIN!..!GIT_ORIGIN!/!GIT_MAIN!
+if "!x!"=="0" goto gitmanager
 pause
 goto gitsync
 
 
-:: ======================================================
+:: ===============================================================================
 :: LOG / DIFF
-:: ======================================================
+:: ===============================================================================
 
 :gitlogmenu
 cls
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                    HISTORY / LOG
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 echo.
 echo   Main: !GIT_MAIN!    Origin: !GIT_ORIGIN!
 echo.
-echo   1. Recent commits
-echo   2. Full graph
-echo   3. File history
-echo   4. Show commit
-echo   5. Search commit messages
-echo   6. Compare main and origin/main
-echo   7. Back
+echo   1. Show recent commits                 [git log --oneline -20]
+echo   2. Show visual commit graph            [git log --graph --all]
+echo   3. Show history of a file              [git log --follow -- FILE]
+echo   4. Inspect a specific commit           [git show HASH]
+echo   5. Search commit messages              [git log --grep=TEXT]
+echo   6. Compare Main and Origin/Main        [git log main..origin/main]
+echo   0. Back
 echo.
 set "x="
 set /p "x=  Select option: "
-if "!x!"=="1" call :run_command "git log --oneline -20"
-if "!x!"=="2" call :run_command "git log --oneline --graph --decorate --all -30"
+if "!x!"=="1" call :run_command git log --oneline -20
+if "!x!"=="2" call :run_command git log --oneline --graph --decorate --all -30
 if "!x!"=="3" (
     set "p="
     set /p "p=  File: "
-    if defined p call :run_command "git log --oneline --follow -- !p!"
+    if defined p call :run_command git log --oneline --follow -- !p!
 )
 if "!x!"=="4" (
     set "c="
     set /p "c=  Commit/hash: "
-    if defined c call :run_command "git show !c!"
+    if defined c call :run_command git show !c!
 )
 if "!x!"=="5" (
     set "q="
     set /p "q=  Search text: "
-    if defined q call :run_command "git log --oneline --all --grep="!q!""
+    if defined q call :run_command git log --oneline --all --grep="!q!"
 )
-if "!x!"=="6" call :run_command "git log --oneline !GIT_MAIN!..!GIT_ORIGIN!/!GIT_MAIN!"
-if "!x!"=="7" goto gitmanager
+if "!x!"=="6" call :run_command git log --oneline !GIT_MAIN!..!GIT_ORIGIN!/!GIT_MAIN!
+if "!x!"=="0" goto gitmanager
 pause
 goto gitlogmenu
 
 :gitdiff
 cls
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                       DIFF
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 echo.
-echo   1. Working tree changes
-echo   2. Staged changes
-echo   3. Main vs origin/main
-echo   4. Two commits
-echo   5. File diff
-echo   6. Back
+echo   1. See changes not staged yet          [git diff]
+echo   2. See changes already staged          [git diff --cached]
+echo   3. Compare Main with Origin/Main       [git diff main..origin/main]
+echo   4. Compare two commits                 [git diff HASH1 HASH2]
+echo   5. Compare changes in one file         [git diff -- FILE]
+echo   0. Back
 echo.
 set "x="
 set /p "x=  Select option: "
-if "!x!"=="1" call :run_command "git diff"
-if "!x!"=="2" call :run_command "git diff --cached"
-if "!x!"=="3" call :run_command "git diff !GIT_MAIN!..!GIT_ORIGIN!/!GIT_MAIN!"
+if "!x!"=="1" call :run_command git diff
+if "!x!"=="2" call :run_command git diff --cached
+if "!x!"=="3" call :run_command git diff !GIT_MAIN!..!GIT_ORIGIN!/!GIT_MAIN!
 if "!x!"=="4" (
     set "a="
     set /p "a=  First commit: "
     set "b="
     set /p "b=  Second commit: "
-    if defined a if defined b call :run_command "git diff !a! !b!"
+    if defined a if defined b call :run_command git diff !a! !b!
 )
 if "!x!"=="5" (
     set "p="
     set /p "p=  File: "
-    if defined p call :run_command "git diff -- !p!"
+    if defined p call :run_command git diff -- !p!
 )
-if "!x!"=="6" goto gitmanager
+if "!x!"=="0" goto gitmanager
 pause
 goto gitdiff
 
 
-:: ======================================================
+:: ===============================================================================
 :: STASH
-:: ======================================================
+:: ===============================================================================
 
 :gitstash
 cls
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                    STASH MANAGER
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 echo.
-echo   1. Stash changes
-echo   2. Stash including untracked
-echo   3. List stashes
-echo   4. Show stash
-echo   5. Apply stash
-echo   6. Pop stash
-echo   7. Drop stash
-echo   8. Clear all stashes
-echo   9. Back
+echo   1. Temporarily save current changes     [git stash push]
+echo   2. Save changes + new files             [git stash push -u]
+echo   3. List saved stashes                   [git stash list]
+echo   4. Inspect a saved stash                [git stash show -p]
+echo   5. Apply a stash without deleting it    [git stash apply]
+echo   6. Apply + remove a stash               [git stash pop]
+echo   7. Delete one saved stash               [git stash drop]
+echo   8. Delete all saved stashes             [git stash clear]
+echo   0. Back
 echo.
 set "x="
 set /p "x=  Select option: "
-if "!x!"=="1" call :run_command "git stash push"
-if "!x!"=="2" call :run_command "git stash push -u"
-if "!x!"=="3" call :run_command "git stash list"
+if "!x!"=="1" call :run_command git stash push
+if "!x!"=="2" call :run_command git stash push -u
+if "!x!"=="3" call :run_command git stash list
 if "!x!"=="4" (
     set "n="
     set /p "n=  Stash (e.g. stash@{0}): "
-    if defined n call :run_command "git stash show -p !n!"
+    if defined n call :run_command git stash show -p !n!
 )
 if "!x!"=="5" (
     set "n="
     set /p "n=  Stash [stash@{0}]: "
     if not defined n set "n=stash@{0}"
-    call :run_command "git stash apply !n!"
+    call :run_command git stash apply !n!
 )
-if "!x!"=="6" call :run_command "git stash pop"
+if "!x!"=="6" call :run_command git stash pop
 if "!x!"=="7" (
     set "n="
     set /p "n=  Stash [stash@{0}]: "
     if not defined n set "n=stash@{0}"
-    call :run_command "git stash drop !n!"
+    call :run_command git stash drop !n!
 )
-if "!x!"=="8" call :run_command "git stash clear"
-if "!x!"=="9" goto gitmanager
+if "!x!"=="8" call :run_command git stash clear
+if "!x!"=="0" goto gitmanager
 pause
 goto gitstash
 
 
-:: ======================================================
+:: ===============================================================================
 :: TAGS
-:: ======================================================
+:: ===============================================================================
 
 :gittags
 cls
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                      TAG MANAGER
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 echo.
-echo   1. List tags
-echo   2. Create lightweight tag
-echo   3. Create annotated tag
-echo   4. Show tag
-echo   5. Delete local tag
-echo   6. Push tag to origin
-echo   7. Push all tags to origin
-echo   8. Delete remote tag from origin
-echo   9. Back
+echo   1. Show version/release tags            [git tag -n]
+echo   2. Create a simple version tag          [git tag NAME]
+echo   3. Create a tag with release message    [git tag -a NAME -m MESSAGE]
+echo   4. Inspect a tag                        [git show TAG]
+echo   5. Delete a local tag                   [git tag -d TAG]
+echo   6. Upload a tag to Origin               [git push origin TAG]
+echo   7. Upload all tags                      [git push origin --tags]
+echo   8. Delete a tag from Origin             [git push origin --delete TAG]
+echo   0. Back
 echo.
 set "x="
 set /p "x=  Select option: "
-if "!x!"=="1" call :run_command "git tag -n"
+if "!x!"=="1" call :run_command git tag -n
 if "!x!"=="2" (
     set "t="
     set /p "t=  Tag name: "
-    if defined t call :run_command "git tag !t!"
+    if defined t call :run_command git tag !t!
 )
 if "!x!"=="3" (
     set "t="
     set /p "t=  Tag name: "
     set "m="
     set /p "m=  Message: "
-    if defined t call :run_command "git tag -a !t! -m "!m!""
+    if defined t call :run_command git tag -a !t! -m "!m!"
 )
 if "!x!"=="4" (
     set "t="
     set /p "t=  Tag: "
-    if defined t call :run_command "git show !t!"
+    if defined t call :run_command git show !t!
 )
 if "!x!"=="5" (
     set "t="
     set /p "t=  Tag to delete: "
-    if defined t call :run_command "git tag -d !t!"
+    if defined t call :run_command git tag -d !t!
 )
 if "!x!"=="6" (
     set "t="
     set /p "t=  Tag: "
-    if defined t call :run_command "git push !GIT_ORIGIN! !t!"
+    if defined t call :run_command git push !GIT_ORIGIN! !t!
 )
-if "!x!"=="7" call :run_command "git push !GIT_ORIGIN! --tags"
+if "!x!"=="7" call :run_command git push !GIT_ORIGIN! --tags
 if "!x!"=="8" (
     set "t="
     set /p "t=  Remote tag to delete: "
-    if defined t call :run_command "git push !GIT_ORIGIN! --delete !t!"
+    if defined t call :run_command git push !GIT_ORIGIN! --delete !t!
 )
-if "!x!"=="9" goto gitmanager
+if "!x!"=="0" goto gitmanager
 pause
 goto gittags
 
 
-:: ======================================================
+:: ===============================================================================
 :: REBASE / MERGE / CHERRY-PICK / REVERT
-:: ======================================================
+:: ===============================================================================
 
 :gitrebase
 cls
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                       REBASE
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 echo   Main: !GIT_MAIN!    Origin: !GIT_ORIGIN!
 echo.
-echo   1. Rebase current onto main
-echo   2. Rebase current onto origin/main
-echo   3. Interactive rebase last N commits
-echo   4. Continue rebase
-echo   5. Abort rebase
-echo   6. Skip commit
-echo   7. Back
+echo   1. Move current work on top of Main   [git rebase main]
+echo   2. Move current work on top of Origin/Main [git rebase origin/main]
+echo   3. Edit last N commits interactively  [git rebase -i HEAD~N]
+echo   4. Continue after fixing conflicts    [git rebase --continue]
+echo   5. Cancel the rebase                  [git rebase --abort]
+echo   6. Skip the current commit            [git rebase --skip]
+echo   0. Back
 echo.
 set "x="
 set /p "x=  Select option: "
-if "!x!"=="1" call :run_command "git rebase !GIT_MAIN!"
-if "!x!"=="2" call :run_command "git rebase !GIT_ORIGIN!/!GIT_MAIN!"
+if "!x!"=="1" call :run_command git rebase !GIT_MAIN!
+if "!x!"=="2" call :run_command git rebase !GIT_ORIGIN!/!GIT_MAIN!
 if "!x!"=="3" (
     set "n="
     set /p "n=  Number of commits: "
-    if defined n call :run_command "git rebase -i HEAD~!n!"
+    if defined n call :run_command git rebase -i HEAD~!n!
 )
-if "!x!"=="4" call :run_command "git rebase --continue"
-if "!x!"=="5" call :run_command "git rebase --abort"
-if "!x!"=="6" call :run_command "git rebase --skip"
-if "!x!"=="7" goto gitmanager
+if "!x!"=="4" call :run_command git rebase --continue
+if "!x!"=="5" call :run_command git rebase --abort
+if "!x!"=="6" call :run_command git rebase --skip
+if "!x!"=="0" goto gitmanager
 pause
 goto gitrebase
 
 :gitmerge
 cls
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                       MERGE
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 echo   Main: !GIT_MAIN!    Origin: !GIT_ORIGIN!
 echo.
-echo   1. Merge a branch
-echo   2. Merge origin/main
-echo   3. Continue merge
-echo   4. Abort merge
-echo   5. Back
+echo   1. Combine another branch into this one [git merge BRANCH]
+echo   2. Combine Origin/Main into current     [git merge origin/main]
+echo   3. Continue after fixing conflicts      [git merge --continue]
+echo   4. Cancel the current merge             [git merge --abort]
+echo   0. Back
 echo.
 set "x="
 set /p "x=  Select option: "
 if "!x!"=="1" (
     set "b="
     set /p "b=  Branch: "
-    if defined b call :run_command "git merge !b!"
+    if defined b call :run_command git merge !b!
 )
-if "!x!"=="2" call :run_command "git merge !GIT_ORIGIN!/!GIT_MAIN!"
-if "!x!"=="3" call :run_command "git merge --continue"
-if "!x!"=="4" call :run_command "git merge --abort"
-if "!x!"=="5" goto gitmanager
+if "!x!"=="2" call :run_command git merge !GIT_ORIGIN!/!GIT_MAIN!
+if "!x!"=="3" call :run_command git merge --continue
+if "!x!"=="4" call :run_command git merge --abort
+if "!x!"=="0" goto gitmanager
 pause
 goto gitmerge
 
 :gitcherry
 cls
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                     CHERRY-PICK
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 echo.
-echo   1. Cherry-pick commit
-echo   2. Continue
-echo   3. Abort
-echo   4. Skip
-echo   5. Back
+echo   1. Copy one commit into this branch     [git cherry-pick HASH]
+echo   2. Continue after fixing conflicts      [git cherry-pick --continue]
+echo   3. Cancel cherry-pick                   [git cherry-pick --abort]
+echo   4. Skip the current commit              [git cherry-pick --skip]
+echo   0. Back
 echo.
 set "x="
 set /p "x=  Select option: "
 if "!x!"=="1" (
     set "c="
     set /p "c=  Commit/hash: "
-    if defined c call :run_command "git cherry-pick !c!"
+    if defined c call :run_command git cherry-pick !c!
 )
-if "!x!"=="2" call :run_command "git cherry-pick --continue"
-if "!x!"=="3" call :run_command "git cherry-pick --abort"
-if "!x!"=="4" call :run_command "git cherry-pick --skip"
-if "!x!"=="5" goto gitmanager
+if "!x!"=="2" call :run_command git cherry-pick --continue
+if "!x!"=="3" call :run_command git cherry-pick --abort
+if "!x!"=="4" call :run_command git cherry-pick --skip
+if "!x!"=="0" goto gitmanager
 pause
 goto gitcherry
 
 :gitrevert
 cls
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                    REVERT COMMIT
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 echo.
 echo   Revert creates a new commit that undoes another commit.
 echo.
 set "c="
 set /p "c=  Commit/hash to revert: "
-if defined c call :run_command "git revert !c!"
+if defined c call :run_command git revert !c!
 pause
 goto gitmanager
 
 
-:: ======================================================
+:: ===============================================================================
 :: RESET / RESTORE / CLEAN
-:: ======================================================
+:: ===============================================================================
 
 :gitreset
 cls
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                  RESET / RESTORE
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 echo.
-echo   1. Restore a file from working tree
-echo   2. Restore all working-tree files
-echo   3. Soft reset to commit
-echo   4. Mixed reset to commit
-echo   5. Hard reset to commit
-echo   6. Back
+echo   1. Discard changes in one file           [git restore -- FILE]
+echo   2. Discard all unstaged changes          [git restore .]
+echo   3. Move HEAD to commit, keep changes     [git reset --soft HASH]
+echo   4. Move HEAD to commit, unstage changes  [git reset HASH]
+echo   5. Force-reset and discard local changes [git reset --hard HASH]
+echo   0. Back
 echo.
 set "x="
 set /p "x=  Select option: "
 if "!x!"=="1" (
     set "p="
     set /p "p=  File: "
-    if defined p call :run_command "git restore -- !p!"
+    if defined p call :run_command git restore -- !p!
 )
-if "!x!"=="2" call :run_command "git restore ."
+if "!x!"=="2" call :run_command git restore .
 if "!x!"=="3" (
     set "c="
     set /p "c=  Commit: "
-    if defined c call :run_command "git reset --soft !c!"
+    if defined c call :run_command git reset --soft !c!
 )
 if "!x!"=="4" (
     set "c="
     set /p "c=  Commit: "
-    if defined c call :run_command "git reset !c!"
+    if defined c call :run_command git reset !c!
 )
 if "!x!"=="5" (
     echo   WARNING: hard reset discards local changes.
@@ -2277,120 +2295,120 @@ if "!x!"=="5" (
     if "!ok!"=="YES" (
         set "c="
         set /p "c=  Commit: "
-        if defined c call :run_command "git reset --hard !c!"
+        if defined c call :run_command git reset --hard !c!
     )
 )
-if "!x!"=="6" goto gitmanager
+if "!x!"=="0" goto gitmanager
 pause
 goto gitreset
 
 :gitclean
 cls
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                CLEAN UNTRACKED FILES
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 echo.
-echo   1. Preview clean
-echo   2. Delete untracked files
-echo   3. Delete untracked files + folders
-echo   4. Back
+echo   1. Preview what would be deleted        [git clean -n]
+echo   2. Delete untracked files               [git clean -f]
+echo   3. Delete untracked files + folders     [git clean -fd]
+echo   0. Back
 echo.
 set "x="
 set /p "x=  Select option: "
-if "!x!"=="1" call :run_command "git clean -n"
-if "!x!"=="2" call :run_command "git clean -f"
-if "!x!"=="3" call :run_command "git clean -fd"
-if "!x!"=="4" goto gitmanager
+if "!x!"=="1" call :run_command git clean -n
+if "!x!"=="2" call :run_command git clean -f
+if "!x!"=="3" call :run_command git clean -fd
+if "!x!"=="0" goto gitmanager
 pause
 goto gitclean
 
 
-:: ======================================================
+:: ===============================================================================
 :: SUBMODULES
-:: ======================================================
+:: ===============================================================================
 
 :gitsubmodule
 cls
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                  SUBMODULE MANAGER
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 echo.
-echo   1. List submodules
-echo   2. Initialize submodules
-echo   3. Update submodules
-echo   4. Update recursively
-echo   5. Add submodule
-echo   6. Sync submodule URLs
-echo   7. Back
+echo   1. See installed submodules             [git submodule status]
+echo   2. Initialize submodules                [git submodule init]
+echo   3. Update submodules                    [git submodule update]
+echo   4. Update nested submodules             [git submodule update --init --recursive]
+echo   5. Add another repository as submodule  [git submodule add URL PATH]
+echo   6. Sync submodule remote URLs           [git submodule sync --recursive]
+echo   0. Back
 echo.
 set "x="
 set /p "x=  Select option: "
-if "!x!"=="1" call :run_command "git submodule status"
-if "!x!"=="2" call :run_command "git submodule init"
-if "!x!"=="3" call :run_command "git submodule update"
-if "!x!"=="4" call :run_command "git submodule update --init --recursive"
+if "!x!"=="1" call :run_command git submodule status
+if "!x!"=="2" call :run_command git submodule init
+if "!x!"=="3" call :run_command git submodule update
+if "!x!"=="4" call :run_command git submodule update --init --recursive
 if "!x!"=="5" (
     set "url="
     set /p "url=  Repository URL: "
     set "path="
     set /p "path=  Local path: "
-    if defined url if defined path call :run_command "git submodule add !url! !path!"
+    if defined url if defined path call :run_command git submodule add !url! !path!
 )
-if "!x!"=="6" call :run_command "git submodule sync --recursive"
-if "!x!"=="7" goto gitmanager
+if "!x!"=="6" call :run_command git submodule sync --recursive
+if "!x!"=="0" goto gitmanager
 pause
 goto gitsubmodule
 
 
-:: ======================================================
+:: ===============================================================================
 :: CONFIG / IGNORE / REFS / INFO
-:: ======================================================
+:: ===============================================================================
 
 :gitconfig
 cls
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                     GIT CONFIG
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 echo.
-echo   1. Show local config
-echo   2. Show global config
-echo   3. Show user name
-echo   4. Show user email
-echo   5. Set user name
-echo   6. Set user email
-echo   7. Back
+echo   1. Show project Git settings           [git config --local --list]
+echo   2. Show Windows-user Git settings      [git config --global --list]
+echo   3. Show configured name                [git config user.name]
+echo   4. Show configured email               [git config user.email]
+echo   5. Set your Git name                   [git config user.name]
+echo   6. Set your Git email                  [git config user.email]
+echo   0. Back
 echo.
 set "x="
 set /p "x=  Select option: "
-if "!x!"=="1" call :run_command "git config --local --list"
-if "!x!"=="2" call :run_command "git config --global --list"
-if "!x!"=="3" call :run_command "git config user.name"
-if "!x!"=="4" call :run_command "git config user.email"
+if "!x!"=="1" call :run_command git config --local --list
+if "!x!"=="2" call :run_command git config --global --list
+if "!x!"=="3" call :run_command git config user.name
+if "!x!"=="4" call :run_command git config user.email
 if "!x!"=="5" (
     set "v="
     set /p "v=  User name: "
-    if defined v call :run_command "git config user.name "!v!""
+    if defined v call :run_command git config user.name "!v!"
 )
 if "!x!"=="6" (
     set "v="
     set /p "v=  User email: "
-    if defined v call :run_command "git config user.email "!v!""
+    if defined v call :run_command git config user.email "!v!"
 )
-if "!x!"=="7" goto gitmanager
+if "!x!"=="0" goto gitmanager
 pause
 goto gitconfig
 
 :gitignore
 cls
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                     GIT IGNORE
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 echo.
-echo   1. Open/create .gitignore
-echo   2. Show .gitignore
-echo   3. Check why a file is ignored
-echo   4. Check ignored files
-echo   5. Back
+echo   1. Open or create the ignore file     [.gitignore / Notepad]
+echo   2. Show ignored-file rules            [type .gitignore]
+echo   3. Explain why a file is ignored      [git check-ignore -v FILE]
+echo   4. Show all ignored files             [git status --ignored]
+echo   0. Back
 echo.
 set "x="
 set /p "x=  Select option: "
@@ -2402,86 +2420,86 @@ if "!x!"=="2" (
 if "!x!"=="3" (
     set "p="
     set /p "p=  File: "
-    if defined p call :run_command "git check-ignore -v !p!"
+    if defined p call :run_command git check-ignore -v !p!
 )
-if "!x!"=="4" call :run_command "git status --ignored"
-if "!x!"=="5" goto gitmanager
+if "!x!"=="4" call :run_command git status --ignored
+if "!x!"=="0" goto gitmanager
 pause
 goto gitignore
 
 :gitrefs
 cls
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                       REFS
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 echo.
-echo   1. All refs
-echo   2. Branch refs
-echo   3. Remote refs
-echo   4. Tags
-echo   5. Reflog
-echo   6. Back
+echo   1. Show every Git reference             [git show-ref]
+echo   2. Show local branch references         [git for-each-ref refs/heads]
+echo   3. Show remote branch references        [git for-each-ref refs/remotes]
+echo   4. Show tag references                  [git for-each-ref refs/tags]
+echo   5. Show recent HEAD movements           [git reflog --all]
+echo   0. Back
 echo.
 set "x="
 set /p "x=  Select option: "
-if "!x!"=="1" call :run_command "git show-ref"
-if "!x!"=="2" call :run_command "git for-each-ref refs/heads"
-if "!x!"=="3" call :run_command "git for-each-ref refs/remotes"
-if "!x!"=="4" call :run_command "git for-each-ref refs/tags"
-if "!x!"=="5" call :run_command "git reflog --all"
-if "!x!"=="6" goto gitmanager
+if "!x!"=="1" call :run_command git show-ref
+if "!x!"=="2" call :run_command git for-each-ref refs/heads
+if "!x!"=="3" call :run_command git for-each-ref refs/remotes
+if "!x!"=="4" call :run_command git for-each-ref refs/tags
+if "!x!"=="5" call :run_command git reflog --all
+if "!x!"=="0" goto gitmanager
 pause
 goto gitrefs
 
 :gitinfo
 cls
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                   GIT INFORMATION
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 echo.
 echo   Main: !GIT_MAIN!    Origin: !GIT_ORIGIN!
 echo.
-echo   1. Git version
-echo   2. Repository root
-echo   3. Current branch
-echo   4. Current commit
-echo   5. Remote URLs
-echo   6. Ahead / behind origin/main
-echo   7. Git environment
-echo   8. Back
+echo   1. Show installed Git version           [git --version]
+echo   2. Show project Git root                [git rev-parse --show-toplevel]
+echo   3. Show current branch                  [git branch --show-current]
+echo   4. Show current commit hash             [git rev-parse HEAD]
+echo   5. Show remote addresses                [git remote -v]
+echo   6. Show ahead/behind Main vs Origin     [git rev-list --left-right --count]
+echo   7. Show Git environment                 [git var -l]
+echo   0. Back
 echo.
 set "x="
 set /p "x=  Select option: "
-if "!x!"=="1" call :run_command "git --version"
-if "!x!"=="2" call :run_command "git rev-parse --show-toplevel"
-if "!x!"=="3" call :run_command "git branch --show-current"
-if "!x!"=="4" call :run_command "git rev-parse HEAD"
-if "!x!"=="5" call :run_command "git remote -v"
-if "!x!"=="6" call :run_command "git rev-list --left-right --count !GIT_MAIN!...!GIT_ORIGIN!/!GIT_MAIN!"
-if "!x!"=="7" call :run_command "git var -l"
-if "!x!"=="8" goto gitmanager
+if "!x!"=="1" call :run_command git --version
+if "!x!"=="2" call :run_command git rev-parse --show-toplevel
+if "!x!"=="3" call :run_command git branch --show-current
+if "!x!"=="4" call :run_command git rev-parse HEAD
+if "!x!"=="5" call :run_command git remote -v
+if "!x!"=="6" call :run_command git rev-list --left-right --count !GIT_MAIN!...!GIT_ORIGIN!/!GIT_MAIN!
+if "!x!"=="7" call :run_command git var -l
+if "!x!"=="0" goto gitmanager
 pause
 goto gitinfo
 
-:: ================================================
+:: =========================================================================
 :: DEPENDENCY MANAGER
-:: ================================================
+:: =========================================================================
 
 :dependencies
 cls
 
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                DEPENDENCY MANAGER
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 
 echo.
-echo   1. Install
-echo   2. Update
-echo   3. Outdated
-echo   4. Audit
-echo   5. Reinstall
-echo   6. List
-echo   7. Back
+echo   1. Install dependencies                [!PM! install]
+echo   2. Update installed dependencies       [!PM! update]
+echo   3. Find outdated dependencies          [!PM! outdated]
+echo   4. Check dependencies for security     [!PM! audit]
+echo   5. Delete and reinstall dependencies   [remove node_modules + install]
+echo   6. List installed dependencies         [!PM! list]
+echo   0. Back
 echo.
 
 set "dc="
@@ -2493,17 +2511,17 @@ if "!dc!"=="3" goto updates
 if "!dc!"=="4" goto depaudit
 if "!dc!"=="5" goto depreinstall
 if "!dc!"=="6" goto deplisting
-if "!dc!"=="7" goto main
+if "!dc!"=="0" goto main
 
 goto dependencies
 
 
 :depupdate
 
-if /i "!PM!"=="npm" call :run_command "npm update"
-if /i "!PM!"=="pnpm" call :run_command "pnpm update"
-if /i "!PM!"=="yarn" call :run_command "yarn upgrade"
-if /i "!PM!"=="bun" call :run_command "bun update"
+if /i "!PM!"=="npm" call :run_command npm update
+if /i "!PM!"=="pnpm" call :run_command pnpm update
+if /i "!PM!"=="yarn" call :run_command yarn upgrade
+if /i "!PM!"=="bun" call :run_command bun update
 
 pause
 goto dependencies
@@ -2511,10 +2529,10 @@ goto dependencies
 
 :depaudit
 
-if /i "!PM!"=="npm" call :run_command "npm audit"
-if /i "!PM!"=="pnpm" call :run_command "pnpm audit"
-if /i "!PM!"=="yarn" call :run_command "yarn npm audit"
-if /i "!PM!"=="bun" call :run_command "bun audit"
+if /i "!PM!"=="npm" call :run_command npm audit
+if /i "!PM!"=="pnpm" call :run_command pnpm audit
+if /i "!PM!"=="yarn" call :run_command yarn npm audit
+if /i "!PM!"=="bun" call :run_command bun audit
 
 pause
 goto dependencies
@@ -2530,10 +2548,7 @@ if /i not "!confirm!"=="Y" goto dependencies
 
 call :safe_rmdir "node_modules"
 
-if /i "!PM!"=="npm" call :run_command "npm install"
-if /i "!PM!"=="pnpm" call :run_command "pnpm install"
-if /i "!PM!"=="yarn" call :run_command "yarn install"
-if /i "!PM!"=="bun" call :run_command "bun install"
+call :run_pm_install
 
 pause
 goto dependencies
@@ -2541,25 +2556,25 @@ goto dependencies
 
 :deplisting
 
-if /i "!PM!"=="npm" call :run_command "npm list"
-if /i "!PM!"=="pnpm" call :run_command "pnpm list"
-if /i "!PM!"=="yarn" call :run_command "yarn list"
-if /i "!PM!"=="bun" call :run_command "bun pm ls"
+if /i "!PM!"=="npm" call :run_command npm list
+if /i "!PM!"=="pnpm" call :run_command pnpm list
+if /i "!PM!"=="yarn" call :run_command yarn list
+if /i "!PM!"=="bun" call :run_command bun pm ls
 
 pause
 goto dependencies
 
 
-:: ================================================
+:: =========================================================================
 :: AUTO REPAIR
-:: ================================================
+:: =========================================================================
 
 :autorepair
 cls
 
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                    AUTO REPAIR
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 
 echo.
 echo   Project Manager will check common problems.
@@ -2578,10 +2593,10 @@ if exist "package.json" (
         set /p "repair=  Install dependencies now? (Y/N): "
 
         if /i "!repair!"=="Y" (
-            if /i "!PM!"=="npm" call :run_command "npm install"
-            if /i "!PM!"=="pnpm" call :run_command "pnpm install"
-            if /i "!PM!"=="yarn" call :run_command "yarn install"
-            if /i "!PM!"=="bun" call :run_command "bun install"
+            if /i "!PM!"=="npm" call :run_command npm install
+            if /i "!PM!"=="pnpm" call :run_command pnpm install
+            if /i "!PM!"=="yarn" call :run_command yarn install
+            if /i "!PM!"=="bun" call :run_command bun install
         )
     )
 )
@@ -2589,7 +2604,7 @@ if exist "package.json" (
 if exist "tsconfig.json" (
     echo.
     echo   [CHECK] TypeScript configuration detected.
-    call :run_command "npx tsc --noEmit"
+    call :run_command npx tsc --noEmit
 )
 
 if exist ".git" (
@@ -2605,16 +2620,16 @@ pause
 goto main
 
 
-:: ================================================
+:: =========================================================================
 :: RECENT PROJECTS
-:: ================================================
+:: =========================================================================
 
 :recent
 cls
 
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                  RECENT PROJECTS
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 
 echo.
 
@@ -2637,16 +2652,16 @@ pause
 goto main
 
 
-:: ================================================
+:: =========================================================================
 :: PROJECT EXPLORER
-:: ================================================
+:: =========================================================================
 
 :explorer
 cls
 
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                  PROJECT EXPLORER
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 
 echo.
 
@@ -2658,9 +2673,9 @@ pause
 goto main
 
 
-:: ================================================
+:: =========================================================================
 :: TERMINAL
-:: ================================================
+:: =========================================================================
 
 :terminal
 
@@ -2669,16 +2684,16 @@ start "Project Terminal" cmd /k "cd /d "%CD%""
 goto main
 
 
-:: ================================================
+:: =========================================================================
 :: VS CODE
-:: ================================================
+:: =========================================================================
 
 :vscode
 cls
 
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                  OPEN IN VS CODE
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 
 echo.
 
@@ -2696,16 +2711,16 @@ pause
 goto main
 
 
-:: ================================================
+:: =========================================================================
 :: CONFIGURATION
-:: ================================================
+:: =========================================================================
 
 :configuration
 cls
 
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo              PROJECT CONFIGURATION
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 
 echo.
 echo   Project Name:
@@ -2744,16 +2759,16 @@ pause
 goto main
 
 
-:: ================================================
+:: =========================================================================
 :: COMMAND HISTORY
-:: ================================================
+:: =========================================================================
 
 :history
 cls
 
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                  COMMAND HISTORY
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 
 echo.
 
@@ -2768,16 +2783,16 @@ pause
 goto main
 
 
-:: ================================================
+:: =========================================================================
 :: WORKSPACE INFORMATION
-:: ================================================
+:: =========================================================================
 
 :workspace
 cls
 
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo               WORKSPACE INFORMATION
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 
 echo.
 
@@ -2819,31 +2834,31 @@ pause
 goto main
 
 
-:: ================================================
+:: =========================================================================
 :: CLEAN MENU
-:: ================================================
+:: =========================================================================
 
 :cleanmenu
 cls
 
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                  CLEAN PROJECT
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 
 echo.
 echo   ----------------------------------------------
 echo   1. Clean Build Output (dist)
 echo   2. Deep Clean
-echo   3. Back
+echo   0. Back
 echo   ----------------------------------------------
 echo.
 
 set "cleanchoice="
-set /p "cleanchoice=  Select option (1-3): "
+set /p "cleanchoice=  Select option (0-2): "
 
 if "!cleanchoice!"=="1" goto clean
 if "!cleanchoice!"=="2" goto deepclean
-if "!cleanchoice!"=="3" goto main
+if "!cleanchoice!"=="0" goto main
 
 echo.
 echo   %RED%[WARNING] Invalid option!%RESET%
@@ -2851,16 +2866,16 @@ timeout /t 2 >nul
 goto cleanmenu
 
 
-:: ================================================
+:: =========================================================================
 :: CLEAN BUILD
-:: ================================================
+:: =========================================================================
 
 :clean
 cls
 
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo                CLEAN BUILD OUTPUT
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 
 echo.
 
@@ -2881,16 +2896,16 @@ pause
 goto main
 
 
-:: ================================================
+:: =========================================================================
 :: DEEP CLEAN
-:: ================================================
+:: =========================================================================
 
 :deepclean
 cls
 
-echo %RED%================================================
+echo %RED%=========================================================================
 echo                DEEP CLEAN PROJECT
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 
 echo.
 echo   %YELLOW%[WARNING] This will delete:%RESET%
@@ -2957,21 +2972,21 @@ pause
 goto main
 
 
-:: ================================================
+:: =========================================================================
 :: EXIT
-:: ================================================
+:: =========================================================================
 
 :exit
 
 cls
 
-echo %CYAN%================================================
+echo %CYAN%=========================================================================
 echo.
 echo                    Goodbye!
 echo.
 echo              Project Manager
 echo.
-echo ================================================%RESET%
+echo =========================================================================%RESET%
 
 timeout /t 2 >nul
 

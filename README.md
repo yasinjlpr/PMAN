@@ -756,19 +756,15 @@ If either command is unavailable, install the required development tools before 
 
 # License
 
-Add your preferred license here before publishing the project publicly.
-
-For example:
-
 ```text
-MIT License
+Copyright © 2026 Yasin Jalilpour
 ```
 
 ---
 
 # Author
 
-**Yasin**
+**Yasin Jalilpour**
 
 PMAN is a lightweight personal developer utility designed to make everyday Windows project management faster and simpler.
 
